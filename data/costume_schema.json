@@ -1,0 +1,120 @@
+{
+  "title": "Flux Costume Test Generator Schema",
+  "description": "JSON schema for generating costume test prompts for Flux models in ComfyUI",
+  "properties": {
+    "subject": {
+      "description": "Details about the subject/character",
+      "properties": {
+        "character_description": "",
+        "age_range": "30s",
+        "gender": "female",
+        "ethnicity": "white",
+        "body_type": "average",
+        "pose": "standing"
+      }
+    },
+    "costume": {
+      "description": "Complete costume description",
+      "properties": {
+        "period": "",
+        "style": "",
+        "color_palette": [
+          "black",
+          "silver",
+          "red"
+        ],
+        "upper_body": {
+          "properties": {
+            "garment_type": "oversized tee",
+            "material": "cotton shirt",
+            "details": ""
+          }
+        },
+        "lower_body": {
+          "properties": {
+            "garment_type": "mini skirt",
+            "material": "denim",
+            "details": ""
+          }
+        },
+        "footwear": {
+          "properties": {
+            "type": "stilettos"
+          }
+        },
+        "accessories": {
+          "items": {
+            "properties": {
+              "type": "copper necklace",
+              "description": "",
+              "material": "",
+              "color": ""
+            }
+          }
+        },
+        "hair_makeup": {
+          "properties": {
+            "hairstyle": "mid-length hair",
+            "hair_color": "black",
+            "makeup_style": "natural"
+          }
+        }
+      }
+    },
+    "technical_specs": {
+      "description": "Photography and technical specifications",
+      "properties": {
+        "camera_type": "film camera",
+        "camera_model": "Leica M6",
+        "lens": {
+          "properties": {
+            "focal_length": "50mm",
+            "aperture": "f/1.4",
+            "type": "prime"
+          }
+        },
+        "lighting_setup": {
+          "properties": {
+            "style": "Rembrandt",
+            "key_light": "beauty dish on the right",
+            "fill_light": "softbox on the left",
+            "background_light": "ring light behind the girl"
+          }
+        },
+        "background": {
+          "properties": {
+            "type": "photo shoot",
+            "color": "light grey",
+            "texture": "weathered",
+            "environment": "photo studio"
+          }
+        }
+      }
+    },
+    "cinematic_style": {
+      "description": "Visual and artistic style preferences",
+      "properties": {
+        "genre": "action",
+        "mood": "cinematic",
+        "color_grading": "warm tones",
+        "reference_style": "70's movie",
+        "composition": "full body",
+        "angle": "low level"
+      }
+    },
+    "quality_settings": {
+      "description": "Image quality and processing parameters",
+      "properties": {
+        "resolution": "magazine quality",
+        "detail_level": "photorealistic",
+        "negative_prompts": [
+          "blurry",
+          "low quality",
+          "distorted",
+          "amateur",
+          "overexposed"
+        ]
+      }
+    }
+  }
+}
