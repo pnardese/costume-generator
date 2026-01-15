@@ -231,7 +231,15 @@ const App = () => {
   const [statusMessage, setStatusMessage] = useState<string>('Initializing...');
   const [persistenceMode, setPersistenceMode] = useState<'firestore' | 'local'>('firestore');
   const [newAccessorySelection, setNewAccessorySelection] = useState<string>('');
-  
+
+  // Ollama state
+  const [ollamaModel, setOllamaModel] = useState<string>('llama3.2');
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [generatedPrompt, setGeneratedPrompt] = useState<string>('');
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [ollamaError, setOllamaError] = useState<string | null>(null);
+  const [ollamaEndpoint] = useState<string>('http://localhost:11434');
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentFieldPathRef = useRef<string | null>(null);
 
@@ -520,6 +528,130 @@ const App = () => {
     }
   };
 
+  // --- OLLAMA FUNCTIONS ---
+
+  const fetchAvailableModels = useCallback(async (): Promise<void> => {
+    try {
+      const response = await fetch(`${ollamaEndpoint}/api/tags`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch Ollama models');
+      }
+
+      const data = await response.json();
+      const models = data.models?.map((m: any) => m.name) || [];
+
+      setAvailableModels(models);
+
+      // Set default model if available
+      if (models.length > 0 && !models.includes(ollamaModel)) {
+        setOllamaModel(models[0]);
+      }
+
+      setOllamaError(null);
+    } catch (error) {
+      console.error('Error fetching Ollama models:', error);
+      setOllamaError('Ollama is not running. Please start Ollama and try again.');
+      setAvailableModels([]);
+    }
+  }, [ollamaEndpoint, ollamaModel]);
+
+  const generatePromptWithOllama = async (): Promise<void> => {
+    if (!ollamaModel) {
+      setOllamaError('Please select an Ollama model first.');
+      return;
+    }
+
+    setIsGenerating(true);
+    setOllamaError(null);
+
+    try {
+      const systemPrompt = `You are an AI assistant that converts structured costume and photography data into natural language prompts optimized for image generation AI systems like Stable Diffusion and ComfyUI.
+
+Your task:
+1. Read the JSON data below
+2. Create a cohesive, flowing natural language description
+3. Include ALL technical details (camera, lighting, costume elements)
+4. Write in a descriptive, visual style
+5. Output a single paragraph or comma-separated descriptive prompt
+
+Rules:
+- Start with the subject description
+- Describe the costume in detail (period, style, materials, colors)
+- Include all accessories and styling details
+- Incorporate technical photography specs naturally
+- End with cinematic style and quality parameters
+- Do not use JSON formatting in the output
+- Create a prompt ready to paste into ComfyUI
+
+JSON Data:
+${JSON.stringify(formData, null, 2)}
+
+Generate the natural language prompt:`;
+
+      const response = await fetch(`${ollamaEndpoint}/api/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: ollamaModel,
+          prompt: systemPrompt,
+          stream: false,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Ollama API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const generatedText = data.response || '';
+
+      setGeneratedPrompt(generatedText.trim());
+      setOllamaError(null);
+      setStatusMessage('Natural language prompt generated successfully!');
+    } catch (error: any) {
+      console.error('Error generating prompt:', error);
+
+      if (error.message.includes('fetch')) {
+        setOllamaError('Ollama is not running. Please start Ollama and try again.');
+      } else if (error.message.includes('404')) {
+        setOllamaError(`Model '${ollamaModel}' not found. Please select another model.`);
+      } else if (error.message.includes('timeout')) {
+        setOllamaError('Request timeout. The model may be loading or unavailable.');
+      } else {
+        setOllamaError('Failed to generate prompt. Please try again.');
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleCopyPrompt = (): void => {
+    try {
+      const textarea = document.createElement('textarea');
+      textarea.value = generatedPrompt;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setStatusMessage('Natural language prompt copied to clipboard!');
+    } catch (error) {
+      console.error('Failed to copy prompt:', error);
+      setStatusMessage('Error: Failed to copy prompt.');
+    }
+  };
+
+  // Load available models when auth is ready
+  useEffect(() => {
+    if (authReady) {
+      fetchAvailableModels();
+    }
+  }, [authReady, fetchAvailableModels]);
+
   // --- FORM RENDERING LOGIC ---
 
   const renderField = (key: string, value: any, parentPath: string = '') => {
@@ -533,14 +665,14 @@ const App = () => {
       const arrayText = value.join('\n');
       return (
         <div key={currentPath} className="mb-4">
-          <label className="block text-sm font-medium text-gray-300 mb-1">{title}</label>
+          <label className="block text-sm font-medium text-gray-600 mb-1">{title}</label>
           <textarea
-            className="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:ring-indigo-500 focus:border-indigo-500 min-h-[100px] shadow-inner"
+            className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-gray-400 focus:border-gray-400 min-h-[100px]"
             value={arrayText}
             onChange={(e) => handleArrayChange(currentPath, e.target.value)}
             placeholder={`Enter one ${key} item per line...`}
           />
-          <span className="text-xs text-gray-400">Enter one item per line.</span>
+          <span className="text-xs text-gray-500">Enter one item per line.</span>
         </div>
       );
     }
@@ -548,8 +680,8 @@ const App = () => {
     // 2. Nested Object Handling
     if (typeof value === 'object' && value !== null) {
       return (
-        <div key={currentPath} className="space-y-4 p-4 mt-2 border border-gray-700 rounded-lg bg-gray-800 shadow-lg">
-          <h3 className="text-lg font-semibold text-indigo-400 border-b border-indigo-700 pb-1">{title}</h3>
+        <div key={currentPath} className="space-y-4 p-4 mt-2 border border-gray-200 rounded-lg bg-gray-50">
+          <h3 className="text-lg font-semibold text-gray-700 border-b border-gray-300 pb-1">{title}</h3>
           {Object.entries(value).map(([subKey, subValue]) => renderField(subKey, subValue, currentPath))}
         </div>
       );
@@ -564,9 +696,9 @@ const App = () => {
       if (isCharacterDescription) {
         return (
           <div key={currentPath} className="mb-4">
-            <label className="block text-sm font-medium text-gray-300 mb-1">{title}</label>
+            <label className="block text-sm font-medium text-gray-600 mb-1">{title}</label>
             <textarea
-              className="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:ring-indigo-500 focus:border-indigo-500 min-h-[80px] shadow-inner"
+              className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-gray-400 focus:border-gray-400 min-h-[80px]"
               value={value}
               onChange={(e) => handleInputChange(currentPath, e.target.value)}
               placeholder="Describe the subject here..."
@@ -579,16 +711,16 @@ const App = () => {
       if (isAccessoriesField) {
         return (
           <div key={currentPath} className="mb-4">
-            <label className="block text-sm font-medium text-gray-300 mb-1">{title} (Comma-Separated List)</label>
-            
-            <div className="mb-3 p-3 border border-gray-600 rounded-md bg-gray-900 text-sm text-gray-200 shadow-inner min-h-[40px] break-words font-mono">
+            <label className="block text-sm font-medium text-gray-600 mb-1">{title} (Comma-Separated List)</label>
+
+            <div className="mb-3 p-3 border border-gray-300 rounded-md bg-gray-50 text-sm text-gray-700 min-h-[40px] break-words font-mono">
               {value || 'No accessories added.'}
             </div>
 
             <div className="flex space-x-2 mb-2">
               {isDropdown ? (
                 <select
-                  className="flex-grow p-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:ring-indigo-500 focus:border-indigo-500 shadow-inner"
+                  className="flex-grow p-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
                   value={newAccessorySelection || (options.length > 0 ? options[0] : '')}
                   onChange={(e) => setNewAccessorySelection(e.target.value)}
                   disabled={options.length === 0}
@@ -600,23 +732,23 @@ const App = () => {
               ) : (
                 <input
                   type="text"
-                  className="flex-grow p-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:ring-indigo-500 focus:border-indigo-500 shadow-inner"
+                  className="flex-grow p-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
                   value={newAccessorySelection}
                   onChange={(e) => setNewAccessorySelection(e.target.value)}
                   placeholder="Type or select new accessory"
                 />
               )}
-              
+
               <button
                 type="button"
                 onClick={() => {
-                  const accessoryToAdd = isDropdown 
-                    ? (newAccessorySelection || options[0]) 
+                  const accessoryToAdd = isDropdown
+                    ? (newAccessorySelection || options[0])
                     : newAccessorySelection;
                   handleAddAccessory(currentPath, accessoryToAdd);
-                  if (!isDropdown) setNewAccessorySelection(''); 
+                  if (!isDropdown) setNewAccessorySelection('');
                 }}
-                className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-150 ease-in-out shadow-lg flex items-center justify-center"
+                className="px-3 py-1.5 text-sm bg-gray-700 text-white rounded-md hover:bg-gray-800 transition duration-150 ease-in-out shadow-sm flex items-center justify-center"
                 title="Add accessory to list"
                 disabled={!isDropdown && newAccessorySelection.trim() === ''}
               >
@@ -626,17 +758,17 @@ const App = () => {
               <button
                 type="button"
                 onClick={() => handleLoadFileClick(currentPath)}
-                className="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-150 ease-in-out shadow-lg flex items-center justify-center"
+                className="px-3 py-1.5 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition duration-150 ease-in-out shadow-sm flex items-center justify-center"
                 title="Load custom list from .txt file"
               >
                 Load List
               </button>
             </div>
-            
+
             <button
                 type="button"
                 onClick={() => handleInputChange(currentPath, '')}
-                className="mt-2 px-3 py-1.5 text-xs bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-150 ease-in-out shadow-lg flex items-center justify-center w-full"
+                className="mt-2 px-3 py-1.5 text-xs bg-gray-500 text-white rounded-md hover:bg-gray-600 transition duration-150 ease-in-out shadow-sm flex items-center justify-center w-full"
                 title="Clear all accessories"
             >
               Clear All Accessories
@@ -648,11 +780,11 @@ const App = () => {
       // Case 3c: Standard String Field (Dropdown or Input with Load button)
       return (
         <div key={currentPath} className="mb-4">
-          <label className="block text-sm font-medium text-gray-300 mb-1">{title}</label>
+          <label className="block text-sm font-medium text-gray-600 mb-1">{title}</label>
           <div className="flex space-x-2">
             {isDropdown ? (
               <select
-                className="flex-grow p-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:ring-indigo-500 focus:border-indigo-500 shadow-inner"
+                className="flex-grow p-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
                 value={value}
                 onChange={(e) => handleInputChange(currentPath, e.target.value)}
               >
@@ -663,24 +795,24 @@ const App = () => {
             ) : (
               <input
                 type="text"
-                className="flex-grow p-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:ring-indigo-500 focus:border-indigo-500 shadow-inner"
+                className="flex-grow p-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
                 value={value}
                 onChange={(e) => handleInputChange(currentPath, e.target.value)}
                 placeholder={`Enter value for ${title}`}
               />
             )}
-            
+
             <button
               type="button"
               onClick={() => handleLoadFileClick(currentPath)}
-              className="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-150 ease-in-out shadow-lg flex items-center justify-center"
+              className="px-3 py-1.5 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition duration-150 ease-in-out shadow-sm flex items-center justify-center"
               title="Load custom list from .txt file"
             >
               Load List
             </button>
           </div>
           {isDropdown && (
-            <span className="text-xs text-gray-400">Using custom list from loaded file.</span>
+            <span className="text-xs text-gray-500">Using custom list from loaded file.</span>
           )}
         </div>
       );
@@ -694,7 +826,7 @@ const App = () => {
   const generatedJson = JSON.stringify(formData, null, 2);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4 sm:p-8 font-inter">
+    <div className="min-h-screen bg-white text-gray-900 p-4 sm:p-8 font-inter">
       {/* Hidden file input for loading lists */}
       <input
         type="file"
@@ -705,67 +837,153 @@ const App = () => {
       />
 
       <header className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-indigo-400 mb-2">Flux Prompt Generator</h1>
-        <p className="text-gray-400">{statusMessage}</p>
+        <h1 className="text-4xl font-bold text-gray-800 mb-2">Flux Prompt Generator</h1>
+        <p className="text-gray-600">{statusMessage}</p>
         <p className="text-xs text-gray-500 mt-1">
-          User ID: {userId || 'N/A'} | Persistence: <span className={`font-semibold ${persistenceMode === 'local' ? 'text-yellow-400' : 'text-green-400'}`}>{persistenceMode.toUpperCase()}</span>
+          User ID: {userId || 'N/A'} | Persistence: <span className={`font-semibold ${persistenceMode === 'local' ? 'text-gray-700' : 'text-gray-800'}`}>{persistenceMode.toUpperCase()}</span>
         </p>
       </header>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* LEFT COLUMN: FORM */}
-        <div className="bg-gray-800 p-6 rounded-xl shadow-2xl">
-          <h2 className="text-2xl font-semibold mb-6 text-indigo-300">Configuration Form</h2>
+        <div className="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200">
+          <h2 className="text-2xl font-semibold mb-6 text-gray-800">Configuration Form</h2>
           <form className="space-y-6">
             {Object.entries(formData).map(([key, value]) => (
-              <div key={key} className="p-4 border border-gray-700 rounded-lg bg-gray-700/50">
-                <h2 className="text-xl font-bold text-indigo-400 mb-3 uppercase tracking-wider">{key.replace(/_/g, ' ')}</h2>
+              <div key={key} className="p-4 border border-gray-200 rounded-lg bg-white">
+                <h2 className="text-xl font-bold text-gray-700 mb-3 uppercase tracking-wider">{key.replace(/_/g, ' ')}</h2>
                 {renderField(key, value)}
               </div>
             ))}
           </form>
         </div>
 
-        {/* RIGHT COLUMN: JSON OUTPUT */}
-        <div className="bg-gray-800 p-6 rounded-xl shadow-2xl">
-          <h2 className="text-2xl font-semibold mb-6 text-indigo-300">Generated JSON</h2>
-          
-          {/* Action Buttons: Copy, Download, and NEW Reset Button */}
-          <div className="flex space-x-4 mb-4">
-            <button
-              type="button"
-              onClick={handleCopyJson}
-              className="flex-1 px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-150 ease-in-out shadow-lg"
-              title="Copy the formatted JSON to your clipboard"
-            >
-              Copy JSON
-            </button>
-            <button
-              type="button"
-              onClick={handleDownloadJson}
-              className="flex-1 px-4 py-2 text-sm font-semibold bg-pink-600 text-white rounded-md hover:bg-pink-700 transition duration-150 ease-in-out shadow-lg"
-              title="Download the JSON data as 'prompt_data.json'"
-            >
-              Download JSON (.json)
-            </button>
-            
-            {/* NEW RESET BUTTON */}
-            {persistenceMode === 'local' && (
+        {/* RIGHT COLUMN: OLLAMA PROMPT & JSON OUTPUT */}
+        <div className="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200">
+          <h2 className="text-2xl font-semibold mb-6 text-gray-800">AI Prompt Generation</h2>
+
+          {/* OLLAMA CONTROLS */}
+          <div className="mb-6 p-4 bg-white rounded-lg border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-700 mb-3">Ollama LLM Settings</h3>
+
+            <div className="flex space-x-3 mb-3">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-600 mb-1">Model</label>
+                <select
+                  value={ollamaModel}
+                  onChange={(e) => setOllamaModel(e.target.value)}
+                  disabled={availableModels.length === 0 || isGenerating}
+                  className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-gray-400 focus:border-gray-400 disabled:opacity-50 disabled:bg-gray-100"
+                >
+                  {availableModels.length === 0 ? (
+                    <option value="">No models available</option>
+                  ) : (
+                    availableModels.map((model) => (
+                      <option key={model} value={model}>{model}</option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  onClick={generatePromptWithOllama}
+                  disabled={isGenerating || availableModels.length === 0}
+                  className="px-6 py-2 text-sm font-semibold bg-gray-800 text-white rounded-md hover:bg-gray-900 transition duration-150 ease-in-out shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Generate natural language prompt using Ollama"
+                >
+                  {isGenerating ? 'Generating...' : 'Generate Prompt'}
+                </button>
+              </div>
+            </div>
+
+            {/* Error Display */}
+            {ollamaError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-800">
+                <strong>Error:</strong> {ollamaError}
+              </div>
+            )}
+
+            {/* Loading Indicator */}
+            {isGenerating && (
+              <div className="p-3 bg-gray-100 border border-gray-300 rounded-md text-sm text-gray-700">
+                Generating prompt with {ollamaModel}... This may take a moment.
+              </div>
+            )}
+          </div>
+
+          {/* NATURAL LANGUAGE PROMPT SECTION */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-gray-700">Generated Natural Language Prompt</h3>
+              {generatedPrompt && (
+                <span className="text-xs text-gray-500">
+                  {generatedPrompt.split(' ').length} words
+                </span>
+              )}
+            </div>
+
+            <textarea
+              value={generatedPrompt}
+              onChange={(e) => setGeneratedPrompt(e.target.value)}
+              placeholder="Click 'Generate Prompt' to create a natural language prompt from your costume data..."
+              className="w-full p-4 border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-gray-400 focus:border-gray-400 font-mono text-sm min-h-[200px] resize-y"
+            />
+
+            {generatedPrompt && (
               <button
                 type="button"
-                onClick={handleResetLocalStorage}
-                className="flex-1 px-4 py-2 text-sm font-semibold bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-150 ease-in-out shadow-lg"
-                title="Clear all saved data from Local Storage and reset form."
+                onClick={handleCopyPrompt}
+                className="mt-2 w-full px-4 py-2 text-sm font-semibold bg-gray-700 text-white rounded-md hover:bg-gray-800 transition duration-150 ease-in-out shadow-sm"
+                title="Copy natural language prompt to clipboard"
               >
-                Reset Local State
+                Copy Prompt to Clipboard
               </button>
             )}
           </div>
-          
-          <pre className="bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm text-green-300 border border-gray-700 shadow-inner h-[80vh] w-full">
-            {generatedJson}
-          </pre>
+
+          {/* JSON OUTPUT SECTION */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-700 mb-3">Structured JSON Data</h3>
+
+            {/* Action Buttons: Copy, Download, and Reset Button */}
+            <div className="flex space-x-4 mb-4">
+              <button
+                type="button"
+                onClick={handleCopyJson}
+                className="flex-1 px-4 py-2 text-sm font-semibold bg-gray-600 text-white rounded-md hover:bg-gray-700 transition duration-150 ease-in-out shadow-sm"
+                title="Copy the formatted JSON to your clipboard"
+              >
+                Copy JSON
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadJson}
+                className="flex-1 px-4 py-2 text-sm font-semibold bg-gray-600 text-white rounded-md hover:bg-gray-700 transition duration-150 ease-in-out shadow-sm"
+                title="Download the JSON data as 'prompt_data.json'"
+              >
+                Download JSON (.json)
+              </button>
+
+              {/* RESET BUTTON */}
+              {persistenceMode === 'local' && (
+                <button
+                  type="button"
+                  onClick={handleResetLocalStorage}
+                  className="flex-1 px-4 py-2 text-sm font-semibold bg-gray-500 text-white rounded-md hover:bg-gray-600 transition duration-150 ease-in-out shadow-sm"
+                  title="Clear all saved data from Local Storage and reset form."
+                >
+                  Reset Local State
+                </button>
+              )}
+            </div>
+
+            <pre className="bg-gray-50 p-4 rounded-lg overflow-x-auto text-sm text-gray-800 border border-gray-200 max-h-[40vh] w-full font-mono">
+              {generatedJson}
+            </pre>
+          </div>
         </div>
         
       </div>
