@@ -232,6 +232,9 @@ const App = () => {
   const [persistenceMode, setPersistenceMode] = useState<'firestore' | 'local'>('firestore');
   const [newAccessorySelection, setNewAccessorySelection] = useState<string>('');
 
+  // LLM Provider state
+  const [llmProvider, setLlmProvider] = useState<'ollama' | 'openrouter'>('ollama');
+
   // Ollama state
   const [ollamaModel, setOllamaModel] = useState<string>('llama3.2');
   const [availableModels, setAvailableModels] = useState<string[]>([]);
@@ -239,6 +242,14 @@ const App = () => {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [ollamaError, setOllamaError] = useState<string | null>(null);
   const [ollamaEndpoint] = useState<string>('http://localhost:11434');
+
+  // OpenRouter state
+  const [openrouterApiKey, setOpenrouterApiKey] = useState<string>('');
+  const [openrouterModels, setOpenrouterModels] = useState<string[]>([]);
+  const [openrouterSelectedModel, setOpenrouterSelectedModel] = useState<string>('');
+  const [openrouterError, setOpenrouterError] = useState<string | null>(null);
+  const [openrouterBalance, setOpenrouterBalance] = useState<number | null>(null);
+  const [isLoadingOpenrouterModels, setIsLoadingOpenrouterModels] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentFieldPathRef = useRef<string | null>(null);
@@ -293,19 +304,32 @@ const App = () => {
   // --- PERSISTENCE SAVE FUNCTION (Firestore or Local Storage) ---
   const firestoreDataPath = `/artifacts/${appId}/users/${userId}/app_data/costume_generator_state`;
 
-  const saveToPersistence = useCallback(async (dataToSave: FormDataType, optionsToSave: DropdownOptionsType) => {
+  const saveToPersistence = useCallback(async (
+    dataToSave: FormDataType,
+    optionsToSave: DropdownOptionsType,
+    llmSettings?: {
+      provider: 'ollama' | 'openrouter';
+      openrouterApiKey: string;
+      openrouterSelectedModel: string;
+    }
+  ) => {
     const saveData = {
         formData: dataToSave,
         dropdownOptions: optionsToSave,
+        llmSettings: llmSettings || {
+          provider: llmProvider,
+          openrouterApiKey: openrouterApiKey,
+          openrouterSelectedModel: openrouterSelectedModel,
+        },
     };
-    
+
     if (persistenceMode === 'firestore') {
       if (!db || !userId) return;
       try {
         const docRef = doc(db, firestoreDataPath);
-        await setDoc(docRef, { 
-          ...saveData, 
-          timestamp: Timestamp.now() 
+        await setDoc(docRef, {
+          ...saveData,
+          timestamp: Timestamp.now()
         });
       } catch (error) {
         console.error('Error saving data to Firestore:', error);
@@ -320,7 +344,7 @@ const App = () => {
         console.error('Error saving data to Local Storage:', error);
       }
     }
-  }, [db, userId, persistenceMode, firestoreDataPath]);
+  }, [db, userId, persistenceMode, firestoreDataPath, llmProvider, openrouterApiKey, openrouterSelectedModel]);
 
 
   // --- PERSISTENCE DATA LOAD (useEffect 2: Load Data) ---
@@ -329,10 +353,11 @@ const App = () => {
 
       let dataToRestore: FormDataType | null = null;
       let restoredOptions: DropdownOptionsType = {};
-      
+      let restoredLlmSettings: any = null;
+
       if (persistenceMode === 'firestore') {
         if (!db || !userId) return;
-        
+
         try {
           const docRef = doc(db, firestoreDataPath);
           const docSnap = await getDoc(docRef);
@@ -341,12 +366,18 @@ const App = () => {
             const data = docSnap.data();
             dataToRestore = data.formData as FormDataType;
             restoredOptions = (data.dropdownOptions || {}) as DropdownOptionsType;
+            restoredLlmSettings = data.llmSettings;
             setStatusMessage('Data loaded successfully from Firestore!');
           } else {
-            await setDoc(docRef, { 
-              formData: initialFormData, 
-              dropdownOptions: {}, 
-              timestamp: Timestamp.now() 
+            await setDoc(docRef, {
+              formData: initialFormData,
+              dropdownOptions: {},
+              llmSettings: {
+                provider: 'ollama',
+                openrouterApiKey: '',
+                openrouterSelectedModel: '',
+              },
+              timestamp: Timestamp.now()
             });
             setStatusMessage('Default data initialized and saved to Firestore.');
             dataToRestore = initialFormData;
@@ -363,11 +394,17 @@ const App = () => {
             const data = JSON.parse(localData);
             dataToRestore = data.formData as FormDataType;
             restoredOptions = (data.dropdownOptions || {}) as DropdownOptionsType;
+            restoredLlmSettings = data.llmSettings;
             setStatusMessage('Data loaded successfully from Local Storage (Non-persistent environment).');
           } else {
-            const defaultSaveData = { 
-                formData: initialFormData, 
-                dropdownOptions: {}, 
+            const defaultSaveData = {
+                formData: initialFormData,
+                dropdownOptions: {},
+                llmSettings: {
+                  provider: 'ollama',
+                  openrouterApiKey: '',
+                  openrouterSelectedModel: '',
+                },
                 timestamp: new Date().toISOString()
             };
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(defaultSaveData));
@@ -380,11 +417,24 @@ const App = () => {
           dataToRestore = initialFormData;
         }
       }
-      
+
       setFormData(dataToRestore || initialFormData);
       setDropdownOptions(restoredOptions);
       if (restoredOptions['costume.accessories'] && restoredOptions['costume.accessories'].length > 0) {
         setNewAccessorySelection(restoredOptions['costume.accessories'][0]);
+      }
+
+      // Restore LLM settings
+      if (restoredLlmSettings) {
+        if (restoredLlmSettings.provider) {
+          setLlmProvider(restoredLlmSettings.provider);
+        }
+        if (restoredLlmSettings.openrouterApiKey) {
+          setOpenrouterApiKey(restoredLlmSettings.openrouterApiKey);
+        }
+        if (restoredLlmSettings.openrouterSelectedModel) {
+          setOpenrouterSelectedModel(restoredLlmSettings.openrouterSelectedModel);
+        }
       }
   }, [authReady, db, userId, persistenceMode, firestoreDataPath]); 
 
@@ -394,7 +444,7 @@ const App = () => {
   }, [loadData]);
 
 
-  // Debounce effect for saving formData 
+  // Debounce effect for saving formData and LLM settings
   useEffect(() => {
     if (!authReady) return;
     const handler = setTimeout(() => {
@@ -402,7 +452,7 @@ const App = () => {
     }, 500);
 
     return () => clearTimeout(handler);
-  }, [formData, dropdownOptions, authReady, saveToPersistence]);
+  }, [formData, dropdownOptions, authReady, saveToPersistence, llmProvider, openrouterApiKey, openrouterSelectedModel]);
 
 
   // --- HANDLERS ---
@@ -418,6 +468,12 @@ const App = () => {
       setFormData(initialFormData);
       setDropdownOptions({});
       setNewAccessorySelection('');
+      setLlmProvider('ollama');
+      setOpenrouterApiKey('');
+      setOpenrouterModels([]);
+      setOpenrouterSelectedModel('');
+      setOpenrouterError(null);
+      setGeneratedPrompt('');
       setStatusMessage('Local Storage cleared and form reset to defaults!');
     } catch (error) {
       console.error('Error resetting Local Storage:', error);
@@ -652,6 +708,164 @@ Generate the natural language prompt:`;
     }
   }, [authReady, fetchAvailableModels]);
 
+  // --- OPENROUTER FUNCTIONS ---
+
+  const fetchOpenRouterModels = useCallback(async (): Promise<void> => {
+    if (!openrouterApiKey || openrouterApiKey.trim() === '') {
+      setOpenrouterError('Please enter an OpenRouter API key first.');
+      setOpenrouterModels([]);
+      return;
+    }
+
+    setIsLoadingOpenrouterModels(true);
+    setOpenrouterError(null);
+
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/models', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${openrouterApiKey}`,
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Flux Prompt Generator',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Invalid API key. Please check your OpenRouter API key.');
+        } else if (response.status === 403) {
+          throw new Error('Access forbidden. Your API key may not have the required permissions.');
+        } else if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+        } else {
+          throw new Error(`Failed to fetch models (HTTP ${response.status})`);
+        }
+      }
+
+      const data = await response.json();
+      const models = data.data?.map((m: any) => m.id) || [];
+
+      setOpenrouterModels(models);
+
+      // Set default model if available
+      if (models.length > 0 && !models.includes(openrouterSelectedModel)) {
+        setOpenrouterSelectedModel(models[0]);
+      }
+
+      setOpenrouterError(null);
+      setStatusMessage('OpenRouter models loaded successfully!');
+    } catch (error: any) {
+      console.error('Error fetching OpenRouter models:', error);
+      setOpenrouterError(error.message || 'Failed to fetch OpenRouter models.');
+      setOpenrouterModels([]);
+    } finally {
+      setIsLoadingOpenrouterModels(false);
+    }
+  }, [openrouterApiKey, openrouterSelectedModel]);
+
+  const generatePromptWithOpenRouter = async (): Promise<void> => {
+    if (!openrouterApiKey || openrouterApiKey.trim() === '') {
+      setOpenrouterError('Please enter an OpenRouter API key first.');
+      return;
+    }
+
+    if (!openrouterSelectedModel) {
+      setOpenrouterError('Please select an OpenRouter model first.');
+      return;
+    }
+
+    setIsGenerating(true);
+    setOpenrouterError(null);
+
+    try {
+      const systemPrompt = `You are an AI assistant that converts structured costume and photography data into natural language prompts optimized for image generation AI systems like Stable Diffusion and ComfyUI.
+
+Your task:
+1. Read the JSON data below
+2. Create a cohesive, flowing natural language description
+3. Include ALL technical details (camera, lighting, costume elements)
+4. Write in a descriptive, visual style
+5. Output a single paragraph or comma-separated descriptive prompt
+
+Rules:
+- Start with the subject description
+- Describe the costume in detail (period, style, materials, colors)
+- Include all accessories and styling details
+- Incorporate technical photography specs naturally
+- End with cinematic style and quality parameters
+- Do not use JSON formatting in the output
+- Create a prompt ready to paste into ComfyUI
+
+JSON Data:
+${JSON.stringify(formData, null, 2)}
+
+Generate the natural language prompt:`;
+
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openrouterApiKey}`,
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Flux Prompt Generator',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: openrouterSelectedModel,
+          messages: [
+            {
+              role: 'user',
+              content: systemPrompt,
+            },
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+
+        if (response.status === 401) {
+          throw new Error('Invalid API key. Please check your OpenRouter API key.');
+        } else if (response.status === 402) {
+          throw new Error('Insufficient credits. Please add credits to your OpenRouter account.');
+        } else if (response.status === 403) {
+          throw new Error('Access forbidden. Your API key may not have the required permissions.');
+        } else if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+        } else if (response.status === 404) {
+          throw new Error(`Model '${openrouterSelectedModel}' not found. Please select another model.`);
+        } else if (response.status === 503) {
+          throw new Error('Service temporarily unavailable. The model may be overloaded. Try again later.');
+        } else {
+          const errorMsg = errorData.error?.message || `Request failed with status ${response.status}`;
+          throw new Error(errorMsg);
+        }
+      }
+
+      const data = await response.json();
+      const generatedText = data.choices?.[0]?.message?.content || '';
+
+      if (!generatedText) {
+        throw new Error('No response generated. The model may have encountered an error.');
+      }
+
+      setGeneratedPrompt(generatedText.trim());
+      setOpenrouterError(null);
+      setStatusMessage('Natural language prompt generated successfully with OpenRouter!');
+    } catch (error: any) {
+      console.error('Error generating prompt with OpenRouter:', error);
+      setOpenrouterError(error.message || 'Failed to generate prompt. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Fetch OpenRouter models when API key changes
+  useEffect(() => {
+    if (openrouterApiKey && openrouterApiKey.trim() !== '' && llmProvider === 'openrouter') {
+      fetchOpenRouterModels();
+    }
+  }, [openrouterApiKey, llmProvider, fetchOpenRouterModels]);
+
   // --- FORM RENDERING LOGIC ---
 
   const renderField = (key: string, value: any, parentPath: string = '') => {
@@ -844,10 +1058,10 @@ Generate the natural language prompt:`;
         </p>
       </header>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
-        {/* LEFT COLUMN: FORM */}
-        <div className="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        {/* LEFT COLUMN: FORM (1/3 width) */}
+        <div className="lg:col-span-1 bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200">
           <h2 className="text-2xl font-semibold mb-6 text-gray-800">Configuration Form</h2>
           <form className="space-y-6">
             {Object.entries(formData).map(([key, value]) => (
@@ -859,60 +1073,187 @@ Generate the natural language prompt:`;
           </form>
         </div>
 
-        {/* RIGHT COLUMN: OLLAMA PROMPT & JSON OUTPUT */}
-        <div className="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200">
+        {/* RIGHT COLUMN: AI PROMPT & JSON OUTPUT (2/3 width) */}
+        <div className="lg:col-span-2 bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200">
           <h2 className="text-2xl font-semibold mb-6 text-gray-800">AI Prompt Generation</h2>
 
-          {/* OLLAMA CONTROLS */}
+          {/* LLM PROVIDER SELECTION */}
           <div className="mb-6 p-4 bg-white rounded-lg border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-700 mb-3">Ollama LLM Settings</h3>
-
-            <div className="flex space-x-3 mb-3">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-600 mb-1">Model</label>
-                <select
-                  value={ollamaModel}
-                  onChange={(e) => setOllamaModel(e.target.value)}
-                  disabled={availableModels.length === 0 || isGenerating}
-                  className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-gray-400 focus:border-gray-400 disabled:opacity-50 disabled:bg-gray-100"
-                >
-                  {availableModels.length === 0 ? (
-                    <option value="">No models available</option>
-                  ) : (
-                    availableModels.map((model) => (
-                      <option key={model} value={model}>{model}</option>
-                    ))
-                  )}
-                </select>
-              </div>
-
-              <div className="flex items-end">
-                <button
-                  type="button"
-                  onClick={generatePromptWithOllama}
-                  disabled={isGenerating || availableModels.length === 0}
-                  className="px-6 py-2 text-sm font-semibold bg-gray-800 text-white rounded-md hover:bg-gray-900 transition duration-150 ease-in-out shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Generate natural language prompt using Ollama"
-                >
-                  {isGenerating ? 'Generating...' : 'Generate Prompt'}
-                </button>
-              </div>
+            <h3 className="text-lg font-semibold text-gray-700 mb-3">LLM Provider</h3>
+            <div className="flex space-x-3">
+              <button
+                type="button"
+                onClick={() => setLlmProvider('ollama')}
+                className={`flex-1 px-4 py-2 text-sm font-semibold rounded-md transition duration-150 ease-in-out ${
+                  llmProvider === 'ollama'
+                    ? 'bg-gray-800 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Ollama (Local)
+              </button>
+              <button
+                type="button"
+                onClick={() => setLlmProvider('openrouter')}
+                className={`flex-1 px-4 py-2 text-sm font-semibold rounded-md transition duration-150 ease-in-out ${
+                  llmProvider === 'openrouter'
+                    ? 'bg-gray-800 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                OpenRouter (Cloud)
+              </button>
             </div>
-
-            {/* Error Display */}
-            {ollamaError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-800">
-                <strong>Error:</strong> {ollamaError}
-              </div>
-            )}
-
-            {/* Loading Indicator */}
-            {isGenerating && (
-              <div className="p-3 bg-gray-100 border border-gray-300 rounded-md text-sm text-gray-700">
-                Generating prompt with {ollamaModel}... This may take a moment.
-              </div>
-            )}
           </div>
+
+          {/* OLLAMA CONTROLS */}
+          {llmProvider === 'ollama' && (
+            <div className="mb-6 p-4 bg-white rounded-lg border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">Ollama LLM Settings</h3>
+
+              <div className="flex space-x-3 mb-3">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-600 mb-1">Model</label>
+                  <select
+                    value={ollamaModel}
+                    onChange={(e) => setOllamaModel(e.target.value)}
+                    disabled={availableModels.length === 0 || isGenerating}
+                    className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-gray-400 focus:border-gray-400 disabled:opacity-50 disabled:bg-gray-100"
+                  >
+                    {availableModels.length === 0 ? (
+                      <option value="">No models available</option>
+                    ) : (
+                      availableModels.map((model) => (
+                        <option key={model} value={model}>{model}</option>
+                      ))
+                    )}
+                  </select>
+                </div>
+
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={generatePromptWithOllama}
+                    disabled={isGenerating || availableModels.length === 0}
+                    className="px-6 py-2 text-sm font-semibold bg-gray-800 text-white rounded-md hover:bg-gray-900 transition duration-150 ease-in-out shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Generate natural language prompt using Ollama"
+                  >
+                    {isGenerating ? 'Generating...' : 'Generate Prompt'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Error Display */}
+              {ollamaError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-800">
+                  <strong>Error:</strong> {ollamaError}
+                </div>
+              )}
+
+              {/* Loading Indicator */}
+              {isGenerating && (
+                <div className="p-3 bg-gray-100 border border-gray-300 rounded-md text-sm text-gray-700">
+                  Generating prompt with {ollamaModel}... This may take a moment.
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* OPENROUTER CONTROLS */}
+          {llmProvider === 'openrouter' && (
+            <div className="mb-6 p-4 bg-white rounded-lg border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">OpenRouter LLM Settings</h3>
+
+              {/* API Key Input */}
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-600 mb-1">
+                  OpenRouter API Key
+                  <a
+                    href="https://openrouter.ai/keys"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-2 text-xs text-gray-500 hover:text-gray-700 underline"
+                  >
+                    (Get API Key)
+                  </a>
+                </label>
+                <div className="flex space-x-2">
+                  <input
+                    type="password"
+                    value={openrouterApiKey}
+                    onChange={(e) => setOpenrouterApiKey(e.target.value)}
+                    placeholder="sk-or-v1-..."
+                    className="flex-1 p-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
+                    disabled={isGenerating}
+                  />
+                  <button
+                    type="button"
+                    onClick={fetchOpenRouterModels}
+                    disabled={!openrouterApiKey || isLoadingOpenrouterModels || isGenerating}
+                    className="px-4 py-2 text-sm font-semibold bg-gray-600 text-white rounded-md hover:bg-gray-700 transition duration-150 ease-in-out shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Fetch available models from OpenRouter"
+                  >
+                    {isLoadingOpenrouterModels ? 'Loading...' : 'Fetch Models'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Model Selection */}
+              <div className="flex space-x-3 mb-3">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-600 mb-1">Model</label>
+                  <select
+                    value={openrouterSelectedModel}
+                    onChange={(e) => setOpenrouterSelectedModel(e.target.value)}
+                    disabled={openrouterModels.length === 0 || isGenerating}
+                    className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-gray-400 focus:border-gray-400 disabled:opacity-50 disabled:bg-gray-100"
+                  >
+                    {openrouterModels.length === 0 ? (
+                      <option value="">No models loaded</option>
+                    ) : (
+                      openrouterModels.map((model) => (
+                        <option key={model} value={model}>{model}</option>
+                      ))
+                    )}
+                  </select>
+                </div>
+
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={generatePromptWithOpenRouter}
+                    disabled={isGenerating || !openrouterApiKey || openrouterModels.length === 0}
+                    className="px-6 py-2 text-sm font-semibold bg-gray-800 text-white rounded-md hover:bg-gray-900 transition duration-150 ease-in-out shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Generate natural language prompt using OpenRouter"
+                  >
+                    {isGenerating ? 'Generating...' : 'Generate Prompt'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Error Display */}
+              {openrouterError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-800">
+                  <strong>Error:</strong> {openrouterError}
+                </div>
+              )}
+
+              {/* Loading Indicator */}
+              {isGenerating && (
+                <div className="p-3 bg-gray-100 border border-gray-300 rounded-md text-sm text-gray-700">
+                  Generating prompt with {openrouterSelectedModel}... This may take a moment.
+                </div>
+              )}
+
+              {/* Info Box */}
+              {!openrouterError && openrouterModels.length === 0 && !isLoadingOpenrouterModels && (
+                <div className="p-3 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-600">
+                  <p>Enter your OpenRouter API key and click &quot;Fetch Models&quot; to get started.</p>
+                  <p className="mt-1 text-xs">OpenRouter provides access to various LLM models including GPT-4, Claude, and more.</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* NATURAL LANGUAGE PROMPT SECTION */}
           <div className="mb-6">
@@ -929,7 +1270,7 @@ Generate the natural language prompt:`;
               value={generatedPrompt}
               onChange={(e) => setGeneratedPrompt(e.target.value)}
               placeholder="Click 'Generate Prompt' to create a natural language prompt from your costume data..."
-              className="w-full p-4 border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-gray-400 focus:border-gray-400 font-mono text-sm min-h-[200px] resize-y"
+              className="w-full p-4 border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-gray-400 focus:border-gray-400 font-mono text-sm min-h-[350px] resize-y"
             />
 
             {generatedPrompt && (
@@ -980,7 +1321,7 @@ Generate the natural language prompt:`;
               )}
             </div>
 
-            <pre className="bg-gray-50 p-4 rounded-lg overflow-x-auto text-sm text-gray-800 border border-gray-200 max-h-[40vh] w-full font-mono">
+            <pre className="bg-gray-50 p-4 rounded-lg overflow-x-auto text-sm text-gray-800 border border-gray-200 min-h-[600px] max-h-[2000px] w-full font-mono leading-relaxed">
               {generatedJson}
             </pre>
           </div>
