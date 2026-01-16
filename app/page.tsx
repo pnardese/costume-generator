@@ -251,6 +251,15 @@ const App = () => {
   const [openrouterBalance, setOpenrouterBalance] = useState<number | null>(null);
   const [isLoadingOpenrouterModels, setIsLoadingOpenrouterModels] = useState<boolean>(false);
 
+  // Image Generation State (OpenRouter)
+  const [imageModels, setImageModels] = useState<string[]>([]);
+  const [selectedImageModel, setSelectedImageModel] = useState<string>('');
+  const [generatedImageUrl, setGeneratedImageUrl] = useState<string>('');
+  const [isGeneratingImage, setIsGeneratingImage] = useState<boolean>(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [imageAspectRatio, setImageAspectRatio] = useState<string>('1:1');
+  const [imageSize, setImageSize] = useState<string>('1K');
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentFieldPathRef = useRef<string | null>(null);
 
@@ -311,6 +320,9 @@ const App = () => {
       provider: 'ollama' | 'openrouter';
       openrouterApiKey: string;
       openrouterSelectedModel: string;
+      selectedImageModel: string;
+      imageAspectRatio: string;
+      imageSize: string;
     }
   ) => {
     const saveData = {
@@ -320,6 +332,9 @@ const App = () => {
           provider: llmProvider,
           openrouterApiKey: openrouterApiKey,
           openrouterSelectedModel: openrouterSelectedModel,
+          selectedImageModel: selectedImageModel,
+          imageAspectRatio: imageAspectRatio,
+          imageSize: imageSize,
         },
     };
 
@@ -344,7 +359,7 @@ const App = () => {
         console.error('Error saving data to Local Storage:', error);
       }
     }
-  }, [db, userId, persistenceMode, firestoreDataPath, llmProvider, openrouterApiKey, openrouterSelectedModel]);
+  }, [db, userId, persistenceMode, firestoreDataPath, llmProvider, openrouterApiKey, openrouterSelectedModel, selectedImageModel, imageAspectRatio, imageSize]);
 
 
   // --- PERSISTENCE DATA LOAD (useEffect 2: Load Data) ---
@@ -376,6 +391,9 @@ const App = () => {
                 provider: 'ollama',
                 openrouterApiKey: '',
                 openrouterSelectedModel: '',
+                selectedImageModel: '',
+                imageAspectRatio: '1:1',
+                imageSize: '1K',
               },
               timestamp: Timestamp.now()
             });
@@ -404,6 +422,9 @@ const App = () => {
                   provider: 'ollama',
                   openrouterApiKey: '',
                   openrouterSelectedModel: '',
+                  selectedImageModel: '',
+                  imageAspectRatio: '1:1',
+                  imageSize: '1K',
                 },
                 timestamp: new Date().toISOString()
             };
@@ -435,6 +456,16 @@ const App = () => {
         if (restoredLlmSettings.openrouterSelectedModel) {
           setOpenrouterSelectedModel(restoredLlmSettings.openrouterSelectedModel);
         }
+        // Restore image generation settings
+        if (restoredLlmSettings.selectedImageModel) {
+          setSelectedImageModel(restoredLlmSettings.selectedImageModel);
+        }
+        if (restoredLlmSettings.imageAspectRatio) {
+          setImageAspectRatio(restoredLlmSettings.imageAspectRatio);
+        }
+        if (restoredLlmSettings.imageSize) {
+          setImageSize(restoredLlmSettings.imageSize);
+        }
       }
   }, [authReady, db, userId, persistenceMode, firestoreDataPath]); 
 
@@ -452,7 +483,7 @@ const App = () => {
     }, 500);
 
     return () => clearTimeout(handler);
-  }, [formData, dropdownOptions, authReady, saveToPersistence, llmProvider, openrouterApiKey, openrouterSelectedModel]);
+  }, [formData, dropdownOptions, authReady, saveToPersistence, llmProvider, openrouterApiKey, openrouterSelectedModel, selectedImageModel, imageAspectRatio, imageSize]);
 
 
   // --- HANDLERS ---
@@ -474,6 +505,13 @@ const App = () => {
       setOpenrouterSelectedModel('');
       setOpenrouterError(null);
       setGeneratedPrompt('');
+      // Reset image generation state
+      setImageModels([]);
+      setSelectedImageModel('');
+      setGeneratedImageUrl('');
+      setImageError(null);
+      setImageAspectRatio('1:1');
+      setImageSize('1K');
       setStatusMessage('Local Storage cleared and form reset to defaults!');
     } catch (error) {
       console.error('Error resetting Local Storage:', error);
@@ -865,6 +903,282 @@ Generate the natural language prompt:`;
       fetchOpenRouterModels();
     }
   }, [openrouterApiKey, llmProvider, fetchOpenRouterModels]);
+
+  // --- IMAGE GENERATION FUNCTIONS ---
+
+  // Helper function to translate HTTP status codes to user-friendly messages
+  const handleImageApiError = (status: number, errorData?: any): string => {
+    switch (status) {
+      case 401:
+        return 'Invalid API key. Please check your OpenRouter API key.';
+      case 402:
+        return 'Insufficient credits. Please add credits to your OpenRouter account.';
+      case 403:
+        return 'Access forbidden. Your API key may not have the required permissions.';
+      case 429:
+        return 'Rate limit exceeded. Please wait a moment and try again.';
+      case 503:
+        return 'Service temporarily unavailable. The model may be overloaded.';
+      default:
+        return errorData?.error?.message || `Request failed with status ${status}`;
+    }
+  };
+
+  // Create prompt from form data when no generated prompt exists
+  const createPromptFromFormData = (): string => {
+    const { subject, costume, technical_specs, cinematic_style, quality_settings } = formData;
+
+    const parts: string[] = [];
+
+    // Subject description
+    if (subject.character_description) {
+      parts.push(subject.character_description);
+    } else {
+      parts.push(`A ${subject.age_range} ${subject.gender}, ${subject.ethnicity}, ${subject.body_type} build, ${subject.pose} pose`);
+    }
+
+    // Costume details
+    if (costume.period || costume.style) {
+      parts.push(`wearing ${costume.period} ${costume.style} costume`);
+    }
+    if (costume.color_palette.length > 0) {
+      parts.push(`in ${costume.color_palette.join(', ')} colors`);
+    }
+    if (costume.upper_body.garment_type) {
+      parts.push(`${costume.upper_body.material} ${costume.upper_body.garment_type}`);
+    }
+    if (costume.lower_body.garment_type) {
+      parts.push(`${costume.lower_body.material} ${costume.lower_body.garment_type}`);
+    }
+    if (costume.footwear.type) {
+      parts.push(`wearing ${costume.footwear.type}`);
+    }
+    if (costume.accessories) {
+      parts.push(`accessories: ${costume.accessories}`);
+    }
+    if (costume.hair_makeup.hairstyle) {
+      parts.push(`${costume.hair_makeup.hair_color} ${costume.hair_makeup.hairstyle}`);
+    }
+    if (costume.hair_makeup.makeup_style) {
+      parts.push(`${costume.hair_makeup.makeup_style} makeup`);
+    }
+
+    // Technical specs
+    if (technical_specs.camera_model) {
+      parts.push(`shot on ${technical_specs.camera_model}`);
+    }
+    if (technical_specs.lens.focal_length) {
+      parts.push(`${technical_specs.lens.focal_length} ${technical_specs.lens.type} lens at ${technical_specs.lens.aperture}`);
+    }
+    if (technical_specs.lighting_setup.style) {
+      parts.push(`${technical_specs.lighting_setup.style} lighting`);
+    }
+    if (technical_specs.background.environment) {
+      parts.push(`in ${technical_specs.background.environment}`);
+    }
+
+    // Cinematic style
+    if (cinematic_style.genre || cinematic_style.mood) {
+      parts.push(`${cinematic_style.genre} ${cinematic_style.mood}`);
+    }
+    if (cinematic_style.color_grading) {
+      parts.push(cinematic_style.color_grading);
+    }
+    if (cinematic_style.composition) {
+      parts.push(`${cinematic_style.composition} shot`);
+    }
+    if (cinematic_style.angle) {
+      parts.push(`${cinematic_style.angle} angle`);
+    }
+
+    // Quality settings
+    if (quality_settings.resolution) {
+      parts.push(quality_settings.resolution);
+    }
+    if (quality_settings.detail_level) {
+      parts.push(quality_settings.detail_level);
+    }
+
+    return parts.filter(p => p.trim()).join(', ');
+  };
+
+  // Fetch available image models from OpenRouter
+  const fetchImageModels = useCallback(async (): Promise<void> => {
+    if (!openrouterApiKey || openrouterApiKey.trim() === '') {
+      setImageModels([]);
+      return;
+    }
+
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/models', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${openrouterApiKey}`,
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Flux Prompt Generator',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(handleImageApiError(response.status));
+      }
+
+      const data = await response.json();
+      // Filter models that support image output
+      const imageCapableModels = data.data?.filter((m: any) =>
+        m.output_modalities?.includes('image') ||
+        m.id?.includes('flux') ||
+        m.id?.includes('imagen') ||
+        m.id?.includes('stable-diffusion') ||
+        m.id?.includes('dall-e') ||
+        (m.id?.includes('gemini') && m.id?.includes('image'))
+      ).map((m: any) => m.id) || [];
+
+      setImageModels(imageCapableModels);
+
+      // Set default model if available
+      if (imageCapableModels.length > 0 && !imageCapableModels.includes(selectedImageModel)) {
+        // Prefer FLUX.2 or Gemini image model if available
+        const preferredModel = imageCapableModels.find((m: string) =>
+          m.includes('flux') || m.includes('gemini-2')
+        ) || imageCapableModels[0];
+        setSelectedImageModel(preferredModel);
+      }
+
+      setImageError(null);
+    } catch (error: any) {
+      console.error('Error fetching image models:', error);
+      setImageError(error.message || 'Failed to fetch image models.');
+      setImageModels([]);
+    }
+  }, [openrouterApiKey, selectedImageModel]);
+
+  // Generate image with OpenRouter
+  const generateImageWithOpenRouter = async (): Promise<void> => {
+    if (!openrouterApiKey || openrouterApiKey.trim() === '') {
+      setImageError('Please enter an OpenRouter API key first.');
+      return;
+    }
+
+    if (!selectedImageModel) {
+      setImageError('Please select an image model first.');
+      return;
+    }
+
+    setIsGeneratingImage(true);
+    setImageError(null);
+
+    try {
+      // Use generated prompt if available, otherwise create from form data
+      const prompt = generatedPrompt.trim() || createPromptFromFormData();
+
+      if (!prompt) {
+        throw new Error('No prompt available. Please generate a text prompt first or fill in the form data.');
+      }
+
+      // Build request body
+      const requestBody: any = {
+        model: selectedImageModel,
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        modalities: ['image', 'text'],
+      };
+
+      // Add image_config for Gemini models
+      if (selectedImageModel.includes('gemini')) {
+        requestBody.image_config = {
+          aspect_ratio: imageAspectRatio,
+          image_size: imageSize,
+        };
+      }
+
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openrouterApiKey}`,
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Flux Prompt Generator',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(handleImageApiError(response.status, errorData));
+      }
+
+      const data = await response.json();
+
+      // Extract image from response
+      const images = data.choices?.[0]?.message?.images;
+      if (!images || images.length === 0) {
+        throw new Error('No images in response. The model may not support image generation or the prompt was filtered.');
+      }
+
+      const imageUrl = images[0]?.image_url?.url || images[0]?.url || images[0];
+
+      if (!imageUrl) {
+        throw new Error('Invalid image response format.');
+      }
+
+      setGeneratedImageUrl(imageUrl);
+      setImageError(null);
+      setStatusMessage('Image generated successfully!');
+    } catch (error: any) {
+      console.error('Error generating image:', error);
+      setImageError(error.message || 'Failed to generate image. Please try again.');
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
+  // Download generated image
+  const handleDownloadImage = (): void => {
+    if (!generatedImageUrl) {
+      setStatusMessage('No image to download.');
+      return;
+    }
+
+    try {
+      // Handle base64 data URLs
+      if (generatedImageUrl.startsWith('data:')) {
+        const link = document.createElement('a');
+        link.href = generatedImageUrl;
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        link.download = `generated-image-${timestamp}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setStatusMessage('Image downloaded successfully!');
+      } else {
+        // Handle regular URLs
+        const link = document.createElement('a');
+        link.href = generatedImageUrl;
+        link.target = '_blank';
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        link.download = `generated-image-${timestamp}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setStatusMessage('Image download started!');
+      }
+    } catch (error) {
+      console.error('Failed to download image:', error);
+      setStatusMessage('Error: Failed to download image.');
+    }
+  };
+
+  // Fetch image models when API key changes and provider is OpenRouter
+  useEffect(() => {
+    if (openrouterApiKey && openrouterApiKey.trim() !== '' && llmProvider === 'openrouter') {
+      fetchImageModels();
+    }
+  }, [openrouterApiKey, llmProvider, fetchImageModels]);
 
   // --- FORM RENDERING LOGIC ---
 
@@ -1321,12 +1635,132 @@ Generate the natural language prompt:`;
               )}
             </div>
 
-            <pre className="bg-gray-50 p-4 rounded-lg overflow-x-auto text-sm text-gray-800 border border-gray-200 min-h-[600px] max-h-[2000px] w-full font-mono leading-relaxed">
+            <pre className="bg-gray-50 p-4 rounded-lg overflow-x-auto overflow-y-auto text-sm text-gray-800 border border-gray-200 max-h-[600px] w-full font-mono leading-relaxed">
               {generatedJson}
             </pre>
           </div>
+
+          {/* IMAGE GENERATION SECTION (OpenRouter only) */}
+          {llmProvider === 'openrouter' && openrouterApiKey && (
+            <div className="mt-6 p-4 bg-white rounded-lg border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">Image Generation</h3>
+
+              {/* Image Model Selection */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-600 mb-1">Image Model</label>
+                <select
+                  value={selectedImageModel}
+                  onChange={(e) => setSelectedImageModel(e.target.value)}
+                  disabled={imageModels.length === 0 || isGeneratingImage}
+                  className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-gray-400 focus:border-gray-400 disabled:opacity-50 disabled:bg-gray-100"
+                >
+                  {imageModels.length === 0 ? (
+                    <option value="">No image models available</option>
+                  ) : (
+                    imageModels.map((model) => (
+                      <option key={model} value={model}>{model}</option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              {/* Aspect Ratio and Size (for Gemini models) */}
+              {selectedImageModel.includes('gemini') && (
+                <div className="flex space-x-3 mb-4">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-600 mb-1">Aspect Ratio</label>
+                    <select
+                      value={imageAspectRatio}
+                      onChange={(e) => setImageAspectRatio(e.target.value)}
+                      disabled={isGeneratingImage}
+                      className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-gray-400 focus:border-gray-400 disabled:opacity-50"
+                    >
+                      <option value="1:1">1:1 (Square)</option>
+                      <option value="16:9">16:9 (Landscape)</option>
+                      <option value="9:16">9:16 (Portrait)</option>
+                      <option value="4:3">4:3 (Standard)</option>
+                      <option value="3:4">3:4 (Portrait Standard)</option>
+                    </select>
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-600 mb-1">Image Size</label>
+                    <select
+                      value={imageSize}
+                      onChange={(e) => setImageSize(e.target.value)}
+                      disabled={isGeneratingImage}
+                      className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-gray-400 focus:border-gray-400 disabled:opacity-50"
+                    >
+                      <option value="1K">1K (1024px)</option>
+                      <option value="2K">2K (2048px)</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Generate Image Button */}
+              <button
+                type="button"
+                onClick={generateImageWithOpenRouter}
+                disabled={isGeneratingImage || !selectedImageModel || !openrouterApiKey}
+                className="w-full px-6 py-3 text-sm font-semibold bg-gray-800 text-white rounded-md hover:bg-gray-900 transition duration-150 ease-in-out shadow-sm disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+                title="Generate image using the selected model"
+              >
+                {isGeneratingImage ? 'Generating Image...' : 'Generate Image'}
+              </button>
+
+              {/* Error Display */}
+              {imageError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-800 mb-4">
+                  <strong>Error:</strong> {imageError}
+                </div>
+              )}
+
+              {/* Loading Indicator */}
+              {isGeneratingImage && (
+                <div className="p-3 bg-gray-100 border border-gray-300 rounded-md text-sm text-gray-700 mb-4">
+                  Generating image with {selectedImageModel}... This may take a moment.
+                </div>
+              )}
+
+              {/* Generated Image Display */}
+              {generatedImageUrl && !isGeneratingImage && (
+                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div className="mb-3">
+                    <img
+                      src={generatedImageUrl}
+                      alt="Generated image"
+                      className="max-w-full max-h-[500px] mx-auto rounded-md shadow-sm"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleDownloadImage}
+                    className="w-full px-4 py-2 text-sm font-semibold bg-gray-700 text-white rounded-md hover:bg-gray-800 transition duration-150 ease-in-out shadow-sm"
+                    title="Download the generated image"
+                  >
+                    Download Image
+                  </button>
+                </div>
+              )}
+
+              {/* Placeholder when no image generated */}
+              {!generatedImageUrl && !isGeneratingImage && !imageError && (
+                <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-500">
+                  <p>No image generated yet.</p>
+                  <p className="text-xs mt-1">Click &quot;Generate Image&quot; to create an image from your prompt.</p>
+                </div>
+              )}
+
+              {/* Info about prompt usage */}
+              {!generatedPrompt && !isGeneratingImage && (
+                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-800">
+                  <strong>Tip:</strong> Generate a text prompt first for better results, or the form data will be used directly.
+                </div>
+              )}
+            </div>
+          )}
         </div>
-        
+
       </div>
     </div>
   );
