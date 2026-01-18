@@ -764,7 +764,7 @@ Generate the natural language prompt:`;
         headers: {
           'Authorization': `Bearer ${openrouterApiKey}`,
           'HTTP-Referer': window.location.origin,
-          'X-Title': 'Flux Prompt Generator',
+          'X-Title': 'AI Costume Generator',
         },
       });
 
@@ -844,7 +844,7 @@ Generate the natural language prompt:`;
         headers: {
           'Authorization': `Bearer ${openrouterApiKey}`,
           'HTTP-Referer': window.location.origin,
-          'X-Title': 'Flux Prompt Generator',
+          'X-Title': 'AI Costume Generator',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -1015,7 +1015,7 @@ Generate the natural language prompt:`;
         headers: {
           'Authorization': `Bearer ${openrouterApiKey}`,
           'HTTP-Referer': window.location.origin,
-          'X-Title': 'Flux Prompt Generator',
+          'X-Title': 'AI Costume Generator',
         },
       });
 
@@ -1101,7 +1101,7 @@ Generate the natural language prompt:`;
         headers: {
           'Authorization': `Bearer ${openrouterApiKey}`,
           'HTTP-Referer': window.location.origin,
-          'X-Title': 'Flux Prompt Generator',
+          'X-Title': 'AI Costume Generator',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
@@ -1365,7 +1365,7 @@ Generate the natural language prompt:`;
       />
 
       <header className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-800 mb-2">Flux Prompt Generator</h1>
+        <h1 className="text-4xl font-bold text-gray-800 mb-2">AI Costume Generator</h1>
         <p className="text-gray-600">{statusMessage}</p>
         <p className="text-xs text-gray-500 mt-1">
           User ID: {userId || 'N/A'} | Persistence: <span className={`font-semibold ${persistenceMode === 'local' ? 'text-gray-700' : 'text-gray-800'}`}>{persistenceMode.toUpperCase()}</span>
