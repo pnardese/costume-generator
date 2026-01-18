@@ -1031,6 +1031,7 @@ Generate the natural language prompt:`;
         m.id?.includes('imagen') ||
         m.id?.includes('stable-diffusion') ||
         m.id?.includes('dall-e') ||
+        m.id?.includes('gpt-5-image') ||
         (m.id?.includes('gemini') && m.id?.includes('image'))
       ).map((m: any) => m.id) || [];
 
@@ -1038,9 +1039,9 @@ Generate the natural language prompt:`;
 
       // Set default model if available
       if (imageCapableModels.length > 0 && !imageCapableModels.includes(selectedImageModel)) {
-        // Prefer FLUX.2 or Gemini image model if available
+        // Prefer GPT-5 image, FLUX, or Gemini image model if available
         const preferredModel = imageCapableModels.find((m: string) =>
-          m.includes('flux') || m.includes('gemini-2')
+          m.includes('gpt-5-image') || m.includes('flux') || m.includes('gemini-2')
         ) || imageCapableModels[0];
         setSelectedImageModel(preferredModel);
       }
@@ -1088,8 +1089,8 @@ Generate the natural language prompt:`;
         modalities: ['image', 'text'],
       };
 
-      // Add image_config for Gemini models
-      if (selectedImageModel.includes('gemini')) {
+      // Add image_config for Gemini and OpenAI GPT-5 image models
+      if (selectedImageModel.includes('gemini') || selectedImageModel.includes('gpt-5-image')) {
         requestBody.image_config = {
           aspect_ratio: imageAspectRatio,
           image_size: imageSize,
@@ -1664,8 +1665,8 @@ Generate the natural language prompt:`;
                 </select>
               </div>
 
-              {/* Aspect Ratio and Size (for Gemini models) */}
-              {selectedImageModel.includes('gemini') && (
+              {/* Aspect Ratio and Size (for Gemini and OpenAI GPT-5 image models) */}
+              {(selectedImageModel.includes('gemini') || selectedImageModel.includes('gpt-5-image')) && (
                 <div className="flex space-x-3 mb-4">
                   <div className="flex-1">
                     <label className="block text-sm font-medium text-gray-600 mb-1">Aspect Ratio</label>
