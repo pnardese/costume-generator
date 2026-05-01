@@ -1,0 +1,20 @@
+Minimalist
+Maximalist
+Bohemian (Boho)
+Gothic (Goth)
+Cottagecore
+Avant-Garde
+Streetwear
+Preppy / Ivy League
+Sportswear / Athleisure
+Rocker / Biker
+Punk
+Art Deco
+Traditional / Classic
+High Fashion / Couture
+Military-Inspired
+Western / Cowboy
+Tuxedo / Formalwear
+Lingerie-Inspired
+Workwear / Utilitarian
+Vintage (Specify Era: e.g., 1950s Pinup)

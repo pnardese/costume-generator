@@ -1,0 +1,360 @@
+t-shirt
+crew neck t-shirt
+v-neck t-shirt
+fitted t-shirt
+oversized t-shirt
+cropped t-shirt
+long sleeve t-shirt
+short sleeve shirt
+button-up shirt
+collared shirt
+polo shirt
+tank top
+sleeveless tank
+camisole
+halter top
+tube top
+bandeau top
+crop top
+baby tee
+oversized tee
+fitted shirt
+loose fitting shirt
+tucked in shirt
+untucked shirt
+sweatshirt
+hoodie
+pullover hoodie
+zip-up hoodie
+crewneck sweatshirt
+raglan sleeve top
+henley shirt
+thermal shirt
+waffle knit shirt
+striped shirt
+plaid shirt
+flannel shirt
+denim shirt
+chambray shirt
+linen shirt
+cotton blouse
+casual blouse
+blouse
+silk blouse
+satin blouse
+chiffon blouse
+dress shirt
+oxford shirt
+tailored shirt
+pencil fit blouse
+peplum top
+peplum blouse
+wrap blouse
+pussy bow blouse
+button-front blouse
+formal blouse
+professional blouse
+office attire
+business casual top
+short dress
+mini dress
+slip dress
+shift dress
+a-line dress
+wrap dress
+shirt dress
+shirt waist dress
+sundress
+empire waist dress
+bodycon dress
+fit and flare dress
+smock dress
+mumu dress
+maxi dress
+midi dress
+knee-length dress
+tea length dress
+blazer
+tailored blazer
+structured blazer
+oversized blazer
+cropped blazer
+double-breasted blazer
+single-breasted blazer
+sport coat
+suit jacket
+leather jacket
+bomber jacket
+denim jacket
+jean jacket
+trucker jacket
+trench coat
+duster coat
+long coat
+pea coat
+wool coat
+parka
+anorak
+puffer jacket
+quilted jacket
+windbreaker
+raincoat
+motorcycle jacket
+biker jacket
+varsity jacket
+letterman jacket
+cardigan
+knit cardigan
+button-front cardigan
+open-front cardigan
+long cardigan
+cropped cardigan
+sweater
+pullover sweater
+v-neck sweater
+crew neck sweater
+turtleneck sweater
+cowl neck sweater
+cable knit sweater
+chunky knit sweater
+fine gauge sweater
+cashmere sweater
+wool sweater
+cotton sweater
+sleeveless sweater
+sweater vest
+vest
+waistcoat
+suit vest
+utility vest
+quilted vest
+puffer vest
+fleece vest
+gilet
+kimono
+kimono jacket
+kimono robe
+haori
+robe
+dressing gown
+bathrobe
+cover-up
+beach cover-up top
+sarong top
+pareo top
+bolero
+shrug
+short shrug
+crop shrug
+cape
+capelet
+poncho
+wrap
+shawl
+stole
+fur stole
+feather boa upper
+overcoat
+topcoat
+greatcoat
+car coat
+duffle coat
+toggle coat
+wrap coat
+tie waist coat
+military coat
+pea coat double-breasted
+trench coat belted
+maxi coat
+mini coat
+cropped jacket
+long jacket
+sleeveless jacket
+vest top
+bustier
+corset
+cincher
+waist corset
+underbust corset
+overbust corset
+bodysuit
+leotard
+unitard
+catsuit
+one-piece top
+lingerie top
+bra top
+bralette
+sports bra
+athletic top
+compression top
+running top
+yoga top
+gym top
+performance top
+wetsuit top
+rash guard top
+swim top
+bikini top
+tankini top
+bandeau bikini top
+halter bikini top
+triangle bikini top
+underwire top
+push-up top
+padding top
+minimal coverage top
+full coverage top
+sheer top
+mesh top
+lace top
+netting top
+transparent top
+see-through top
+fishnet top
+knit top
+woven top
+jersey knit top
+ribbed knit top
+hacci knit top
+velvet top
+satin top
+silk top
+chiffon top
+georgette top
+crepe top
+linen top
+wool top
+cashmere top
+leather top
+suede top
+faux leather top
+patent leather top
+denim top
+canvas top
+cotton top
+polyester top
+rayon top
+spandex top
+lycra top
+basic color top
+neutral color top
+black top
+white top
+grey top
+red top
+blue top
+green top
+yellow top
+pink top
+purple top
+metallic top
+gold top
+silver top
+bronze top
+vibrant color top
+pastel color top
+neon color top
+dark color top
+light color top
+fitted fit top
+slim fit top
+regular fit top
+loose fit top
+oversized fit top
+relaxed fit top
+draped fit top
+flowy top
+boxy top
+straight fit top
+asymmetrical top
+tunic length top
+long length top
+standard length top
+crop length top
+crop fit top
+waist-cinched top
+empire waist top
+a-line top
+plain top
+simple top
+embellished top
+beaded top
+sequined top
+rhinestone top
+studded top
+fringe top
+tassel top
+ruffled top
+pleated top
+gathered top
+draped top
+wrapped top
+tied top
+laced top
+buttoned top
+zippered top
+printed top
+patterned top
+striped top
+plaid top
+solid color top
+multi-color top
+ombre top
+gradient top
+tie-dye top
+batik top
+floral print top
+abstract print top
+v-neck
+crew neck
+scoop neck
+boatneck
+sweetheart neckline
+plunging neckline
+halter neck
+mock neck
+turtleneck
+cowl neck
+turtle cowl
+off-shoulder neckline
+one-shoulder neckline
+asymmetrical neckline
+high neckline
+low neckline
+keyhole neckline
+cutout neckline
+adjustable neckline
+sleeveless
+short sleeve
+three-quarter sleeve
+long sleeve
+extra long sleeve
+flutter sleeve
+bell sleeve
+balloon sleeve
+puffed sleeve
+cap sleeve
+raglan sleeve
+dolman sleeve
+batwing sleeve
+one-sleeve
+asymmetrical sleeves
+rolled sleeves
+pushed up sleeves
+cuffed sleeves
+ruched sleeves
+off-shoulder sleeves
+layered top
+shirt over tank
+shirt over t-shirt
+sweater over blouse
+vest over shirt
+jacket over dress
+tank with overshirt
+t-shirt under mesh
+sheer over opaque
+crop with high-waisted bottoms
+coordinated set
+matching set
+two-piece crop and shirt

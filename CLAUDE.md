@@ -4,337 +4,158 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Flux Prompt Generator** web application built with Next.js 16 (App Router), React 19, TypeScript, and Tailwind CSS. The app generates structured JSON prompts for AI costume/character generation, with a focus on detailed costume design and cinematic photography specifications.
+This is an **AI Costume Generator** web application built with Next.js 16 (App Router), React 19, TypeScript, and Tailwind CSS. The app generates structured JSON prompts for AI costume/character generation, with a focus on detailed costume design and cinematic photography specifications.
 
 **Key Features**:
 - Structured form for costume/character data entry
 - Firebase/LocalStorage dual-mode persistence
-- **Ollama LLM integration** for natural language prompt generation
+- **Dual LLM provider support**: Ollama (local) and OpenRouter (cloud)
+- **Image generation** via OpenRouter image-capable models
 - Export to JSON or natural language prompt
 - Minimalistic white/grey UI design
 
 ## Key Commands
 
-### Development
 ```bash
 npm run dev       # Start development server (default: http://localhost:3000)
-npm run build     # Build and export static site
-npm start         # Start production server (not typically used with static export)
-npm run serve     # Serve the static /out directory (uses npx serve)
+npm run build     # Build and export static site to /out
+npm run serve     # Serve the static /out directory
+npm run deploy    # Build and deploy to GitHub Pages (gh-pages -d out)
 npm run lint      # Run ESLint
 ```
 
 ### Build Output
-- The project is configured for **static export** (`output: 'export'` in next.config.ts)
-- Build artifacts are exported to the `/out` directory
-- **Must be served via HTTP server** (not opened directly as file://) for proper asset loading
-- Use `npm run serve` or `python -m http.server 8000` in the `/out` directory
-
-### Serving the Static Build
-The static export requires an HTTP server to load assets correctly:
-```bash
-# Option 1: Using npm script
-npm run serve
-
-# Option 2: Python HTTP server
-cd out && python -m http.server 8000
-
-# Option 3: Other servers
-npx http-server out
-npx serve out
-```
+- Configured for **static export** (`output: 'export'` in next.config.ts) — no SSR or API routes
+- Artifacts exported to `/out` — must be served via HTTP server, not `file://`
 
 ## Architecture
 
 ### Single-Page Application Structure
 
-This is a **client-side only** Next.js application with a simple file structure:
-- `app/page.tsx` - Main application component (entire app logic)
-- `app/layout.tsx` - Root layout with font configuration
-- `app/globals.css` - Tailwind CSS global styles
+Entire app logic lives in `app/page.tsx` (one large component). Supporting files:
+- `app/layout.tsx` — root layout with font configuration
+- `app/globals.css` — Tailwind CSS global styles
+- `text_files/` — pre-built `.txt` dropdown lists (garments, accessories, pose, gender, age, etc.)
 
 ### Data Persistence Strategy
 
 The application implements a **dual-mode persistence system**:
 
-1. **Firestore Mode (Primary)**:
-   - Requires Firebase configuration via global variables (`__firebase_config`, `__app_id`, `__initial_auth_token`)
-   - Stores data at path: `/artifacts/${appId}/users/${userId}/app_data/costume_generator_state`
-   - Supports anonymous authentication or custom token authentication
+1. **Firestore Mode (Primary)**: Requires global variables `__firebase_config`, `__app_id`, `__initial_auth_token` injected externally. Stores at `/artifacts/${appId}/users/${userId}/app_data/costume_generator_state`.
+2. **Local Storage Mode (Fallback)**: Activates when Firebase config is missing/invalid. Key: `flux_prompt_generator_state`.
 
-2. **Local Storage Mode (Fallback)**:
-   - Activates automatically when Firebase config is missing/invalid
-   - Stores data in browser localStorage with key: `flux_prompt_generator_state`
-   - Generates temporary UUID for user tracking
+The `saveToPersistence` function (`app/page.tsx:316`) persists `formData`, `dropdownOptions`, and `llmSettings` (provider, API key, model selections, image settings) in both modes.
 
-**Important**: The app gracefully degrades from Firestore to Local Storage without breaking functionality.
+**Debounced auto-save**: 500ms after user stops typing.
 
-### Ollama LLM Integration
+### LLM Provider Architecture
 
-The application integrates with **Ollama** (local LLM server) to transform structured JSON costume data into natural language prompts optimized for generative AI applications like ComfyUI and Stable Diffusion.
+The app supports two LLM providers via a toggle (`llmProvider` state: `'ollama' | 'openrouter'`):
 
-**Architecture**:
-- **Client-side API calls** to local Ollama server (default: `http://localhost:11434`)
-- **Model discovery**: Fetches available models via `GET /api/tags`
-- **Prompt generation**: Sends JSON + system prompt via `POST /api/generate`
-- **Manual trigger**: User clicks "Generate Prompt" button (not automatic)
-- **Error handling**: Graceful degradation when Ollama is unavailable
+**Ollama (local)**:
+- Calls `http://localhost:11434` — hardcoded endpoint
+- `fetchAvailableModels()` → `GET /api/tags`
+- `generatePromptWithOllama()` → `POST /api/generate` (non-streaming)
+- Models must be pulled locally before appearing: `ollama pull llama3.2`
 
-**State Variables** (app/page.tsx:235-241):
-```typescript
-const [ollamaModel, setOllamaModel] = useState<string>('llama3.2');
-const [availableModels, setAvailableModels] = useState<string[]>([]);
-const [generatedPrompt, setGeneratedPrompt] = useState<string>('');
-const [isGenerating, setIsGenerating] = useState<boolean>(false);
-const [ollamaError, setOllamaError] = useState<string | null>(null);
-const [ollamaEndpoint] = useState<string>('http://localhost:11434');
-```
+**OpenRouter (cloud)**:
+- Requires user-provided API key (stored in state, persisted)
+- `fetchOpenRouterModels()` → `GET https://openrouter.ai/api/v1/models`
+- `generatePromptWithOpenRouter()` → `POST https://openrouter.ai/api/v1/chat/completions`
+- Models loaded on-demand via "Fetch Models" button, or auto-fetched when API key changes
 
-**Key Functions**:
-- `fetchAvailableModels()`: Retrieves list of locally downloaded Ollama models
-- `generatePromptWithOllama()`: Sends form data to Ollama with engineered system prompt
-- `handleCopyPrompt()`: Copies generated natural language prompt to clipboard
+Both providers share the same `generatedPrompt` state and use the same system prompt strategy: convert JSON form data into a cohesive natural language description ready for ComfyUI/Stable Diffusion.
 
-**System Prompt Strategy**:
-The prompt sent to Ollama instructs it to:
-1. Convert JSON to cohesive natural language description
-2. Maintain all technical details (camera, lighting, costume)
-3. Create flowing, descriptive sentences (not bullet points)
-4. Output format optimized for image generation AI (ComfyUI/Stable Diffusion)
+### Image Generation
 
-**Model Management**:
-- Dropdown shows **only locally downloaded models** (from `ollama list`)
-- Models must be pulled before appearing: `ollama pull llama3.2`
-- Model selection persists in application state
-- If no models available, dropdown shows "No models available"
+Image generation uses OpenRouter (only available when OpenRouter provider is selected and API key is set):
 
-**Error Scenarios**:
-- Ollama not running → "Ollama is not running. Please start Ollama and try again."
-- Model not found → "Model '{name}' not found. Please select another model."
-- Network timeout → "Request timeout. The model may be loading or unavailable."
+- `fetchImageModels()` — filters OpenRouter models by `output_modalities.includes('image')` or model ID patterns (`flux`, `imagen`, `stable-diffusion`, `dall-e`, `gemini`+`image`)
+- `generateImageWithOpenRouter()` — sends prompt via `/api/v1/chat/completions` with `modalities: ['image', 'text']`
+- Gemini models get additional `image_config: { aspect_ratio, image_size }` in the request body
+- If no `generatedPrompt` exists, `createPromptFromFormData()` builds a fallback prompt directly from form state
+- Response image extracted from `data.choices[0].message.images`; supports both base64 data URLs and regular URLs
 
-### Global Variables (Firebase Integration)
+### Form Data Schema
 
-The app expects these **optional** global variables for Firebase integration:
+`FormDataType` interface (`app/page.tsx:43`). Key sections:
+- **subject**: age_range, gender, ethnicity, body_type, pose, character_description (textarea)
+- **costume**: period, style, color_palette (array), upper_body/lower_body (garment+material+details), footwear, accessories (comma-separated string), hair_makeup
+- **technical_specs**: camera_type, camera_model, lens (focal_length/aperture/type), lighting_setup, background
+- **cinematic_style**: genre, mood, color_grading, reference_style, composition, angle
+- **quality_settings**: resolution, detail_level, negative_prompts (array)
+
+### Dynamic Form Rendering System
+
+The `renderField` function (`app/page.tsx:1185`) recursively renders all form fields:
+1. **Array fields** → newline-separated textarea
+2. **Object fields** → nested section with header
+3. **String fields** → input with "Load List" button; switches to `<select>` when a `.txt` file is loaded for that path
+4. **Special cases**: `character_description` (editable textarea), `costume.accessories` (add/remove UI with dropdown or text input)
+
+### State Management
+
+Key state (all in the single `App` component):
+- `formData` / `dropdownOptions` — main form data and loaded dropdown lists
+- `persistenceMode` / `authReady` / `userId` — persistence tracking
+- `llmProvider` — `'ollama' | 'openrouter'` toggle
+- `ollamaModel` / `availableModels` / `generatedPrompt` / `isGenerating` / `ollamaError`
+- `openrouterApiKey` / `openrouterModels` / `openrouterSelectedModel` / `openrouterError`
+- `imageModels` / `selectedImageModel` / `generatedImageUrl` / `isGeneratingImage` / `imageError`
+- `imageAspectRatio` (`'1:1'|'16:9'|'9:16'|'4:3'|'3:4'`) / `imageSize` (`'1K'|'2K'`) — Gemini-specific
+
+### Helper Functions
+
+- `getPath(obj, path)` (`app/page.tsx:192`) — reads deeply nested value by dot-notation path
+- `setPath(obj, path, value)` (`app/page.tsx:202`) — immutably updates nested value, returns new object
+- `createPromptFromFormData()` (`app/page.tsx:928`) — builds fallback text prompt from form state when no LLM prompt exists
+
+## UI Layout
+
+Three-column responsive grid (`lg:grid-cols-3`):
+- **Left (col-span-1)**: Configuration Form — all costume/character fields
+- **Right (col-span-2)**: AI Prompt Generation — stacked sections:
+  1. LLM Provider toggle (Ollama / OpenRouter)
+  2. Provider-specific controls (model dropdown, API key for OpenRouter)
+  3. Generated natural language prompt textarea (editable, word count)
+  4. Structured JSON output (copy/download buttons)
+  5. Image generation panel (OpenRouter only, when API key is set)
+
+## Tailwind CSS v4
+
+Uses Tailwind v4 (configuration in `postcss.config.mjs`). Design tokens:
+- Background: `bg-white` (page), `bg-gray-50` (cards), `bg-white` (inputs)
+- Buttons: `bg-gray-800` (primary), `bg-gray-700` (secondary), `bg-gray-600` (tertiary)
+- Borders: `border-gray-200` (cards), `border-gray-300` (inputs)
+- Focus: `ring-gray-400`
+
+## Global Variables (Firebase Integration)
+
+Injected externally (by embedding environment):
 ```typescript
 declare const __app_id: string | undefined;
 declare const __firebase_config: string | undefined;
 declare const __initial_auth_token: string | null | undefined;
 ```
+App must handle their absence — always falls back to localStorage.
 
-When modifying Firebase-related code, understand that these are injected externally (likely by an embedding environment) and the app must handle their absence.
+## Development Notes
 
-### Form Data Schema
-
-The application manages a deeply nested form structure defined in `FormDataType` interface (app/page.tsx:38-110). Key sections:
-
-- **subject**: Character physical attributes (age, gender, ethnicity, body type, pose)
-- **costume**: Detailed clothing specs including:
-  - Period and style
-  - Color palette (array)
-  - Upper/lower body garments with materials
-  - Footwear
-  - Accessories (comma-separated string)
-  - Hair and makeup
-- **technical_specs**: Photography equipment (camera, lens, lighting setup, background)
-- **cinematic_style**: Genre, mood, color grading, composition, angle
-- **quality_settings**: Resolution, detail level, negative prompts (array)
-
-### Dynamic Form Rendering System
-
-The app uses a recursive rendering pattern (`renderField` function at app/page.tsx:525) that:
-
-1. **Detects field types** (array, object, string) and renders appropriate inputs
-2. **Supports custom dropdown lists** loaded from `.txt` files via `dropdownOptions` state
-3. **Special handling** for:
-   - `character_description`: Editable textarea
-   - `costume.accessories`: Custom "add to list" UI
-   - Array fields: Newline-separated textarea
-   - String fields: Input or dropdown (if custom list loaded)
-
-### State Management Pattern
-
-Key state variables (app/page.tsx:224-236):
-- `formData`: Main structured data (typed as `FormDataType`)
-- `dropdownOptions`: Dynamic dropdown lists loaded from files (typed as `DropdownOptionsType`)
-- `persistenceMode`: `'firestore'` or `'local'`
-- `authReady`: Signals when authentication/initialization is complete
-- `userId`: User identifier (Firebase UID or generated UUID)
-
-**Debounced auto-save**: Form data automatically saves to persistence 500ms after user stops typing (app/page.tsx:390-397).
-
-### Helper Functions for Nested Data
-
-Two critical utility functions for immutable nested object updates:
-
-- `getPath(obj, path)` (line 192): Retrieves deeply nested value using dot notation (e.g., `'costume.hair_makeup.hairstyle'`)
-- `setPath(obj, path, value)` (line 202): Immutably updates nested value, returning new object
-
-These functions enable dynamic form field updates without hardcoding paths.
-
-## Firebase Configuration Notes
-
-- Firebase SDK is initialized in the main component's `useEffect` (app/page.tsx:239-283)
-- Authentication flow:
-  1. Check for valid Firebase config
-  2. Initialize Firebase app and Firestore
-  3. Attempt custom token auth if `__initial_auth_token` provided
-  4. Fall back to anonymous auth
-  5. Fall back to local storage if any step fails
-- Always wrap Firebase operations in try-catch blocks
-
-## Tailwind CSS v4
-
-This project uses **Tailwind CSS v4** (newer version with different configuration approach):
-- Configuration in `postcss.config.mjs`
-- Global styles in `app/globals.css`
-- **Minimalistic white/grey design**:
-  - Main background: `bg-white`
-  - Cards/containers: `bg-gray-50` with `border-gray-200`
-  - Text: `text-gray-900`, `text-gray-800`, `text-gray-600`
-  - Buttons: `bg-gray-800`, `bg-gray-700`, `bg-gray-600` (various shades)
-  - Inputs: White with `border-gray-300`, focus with `ring-gray-400`
-  - Subtle shadows: `shadow-sm` (minimalistic approach)
-
-## TypeScript Configuration
-
-- **Target**: ES2017
-- **Path alias**: `@/*` maps to project root
-- **JSX**: `react-jsx` (new JSX transform)
-- **Strict mode enabled**
-
-## UI Layout
-
-The application uses a **two-column responsive grid layout**:
-
-### Left Column: Configuration Form
-- Contains the entire costume/character form
-- Nested sections for subject, costume, technical specs, cinematic style, quality settings
-- Each field has a "Load List" button to import custom dropdown options from `.txt` files
-- Special UI for accessories (add/remove interface)
-
-### Right Column: AI Prompt Generation & Output
-**Three sections stacked vertically**:
-
-1. **Ollama LLM Settings** (top)
-   - Model dropdown (populated from local Ollama models)
-   - "Generate Prompt" button
-   - Error/loading indicators
-
-2. **Generated Natural Language Prompt** (middle)
-   - Large editable textarea displaying AI-generated prompt
-   - Word count indicator
-   - "Copy Prompt to Clipboard" button
-   - Placeholder text when no prompt generated
-
-3. **Structured JSON Data** (bottom)
-   - Read-only JSON preview
-   - "Copy JSON" and "Download JSON" buttons
-   - "Reset Local State" button (when in local storage mode)
-   - Height limited to `max-h-[40vh]` to accommodate prompt section
-
-## Important Development Notes
-
-### When Adding New Form Fields
-
-1. Update the `FormDataType` interface
+### Adding New Form Fields
+1. Update `FormDataType` interface
 2. Update `initialFormData` with default values
-3. The `renderField` function will automatically handle rendering
-4. Consider if the field needs special UI treatment (like `accessories` or `character_description`)
+3. `renderField` handles rendering automatically
+4. Add special-case handling in `renderField` if needed (like `accessories`)
 
-### When Modifying Persistence Logic
-
-- Changes must work for **both** Firestore and Local Storage modes
-- Test fallback behavior when Firebase is unavailable
-- The `saveToPersistence` function (line 288) handles both modes
-
-### When Working with Dropdowns
-
-- Dropdown options are stored in `dropdownOptions` state (object with field paths as keys)
-- Options are loaded from `.txt` files (one option per line)
-- The "Load List" button triggers file selection for any field
-- After loading, the field automatically switches from input to dropdown
+### Modifying LLM Prompt Format
+Both Ollama and OpenRouter use the same system prompt template embedded directly in their respective generate functions. Edit the template string in `generatePromptWithOllama()` or `generatePromptWithOpenRouter()`.
 
 ### File Upload Workflow
+1. "Load List" button stores field path in `currentFieldPathRef`, triggers hidden `<input type="file">`
+2. File read as text → split by newlines → stored in `dropdownOptions[fieldPath]`
+3. First option auto-selected; state saved to persistence
 
-1. User clicks "Load List" button
-2. Hidden file input is triggered (`fileInputRef`)
-3. Current field path is stored in `currentFieldPathRef`
-4. File is read as text, split by newlines
-5. Options are stored in `dropdownOptions[fieldPath]`
-6. First option is auto-selected
-7. State is saved to persistence
-
-### When Modifying Ollama Integration
-
-- **API endpoints are hardcoded** to `http://localhost:11434`
-- Model fetching happens automatically when `authReady` becomes `true`
-- Prompt generation is **synchronous** (waits for Ollama response)
-- System prompt template is embedded in `generatePromptWithOllama()` function
-- To modify prompt format: Edit the system prompt string (lines ~571-592)
-- Error messages are user-friendly and stored in `ollamaError` state
-- Generated prompt is **editable** by user after generation
-
-**Testing Ollama Integration**:
-1. Ensure Ollama is running locally: `ollama serve`
-2. Pull a test model: `ollama pull llama3.2`
-3. Refresh the app - model should appear in dropdown
-4. Fill form with test data
-5. Click "Generate Prompt"
-6. Verify natural language output is coherent and includes all JSON details
-
-## Common Patterns
-
-### Updating Form Data
-```typescript
-// Simple field update
-handleInputChange('costume.period', 'Victorian');
-
-// Array field update (newline-separated)
-handleArrayChange('quality_settings.negative_prompts', 'blurry\nlow quality');
-
-// Add to accessories list
-handleAddAccessory('costume.accessories', 'leather belt');
-```
-
-### Accessing Nested Values
-```typescript
-// Get nested value
-const hairstyle = getPath(formData, 'costume.hair_makeup.hairstyle');
-
-// Set nested value (immutably)
-const updatedData = setPath(formData, 'costume.hair_makeup.hairstyle', 'ponytail');
-```
-
-### Using Ollama Integration
-```typescript
-// Fetch available models (called automatically on mount)
-await fetchAvailableModels();
-
-// Generate natural language prompt
-await generatePromptWithOllama();
-// This sends formData to Ollama with engineered system prompt
-// Result stored in generatedPrompt state
-
-// Copy generated prompt to clipboard
-handleCopyPrompt();
-```
-
-**Ollama Requirements**:
-1. Ollama must be running: `ollama serve`
-2. At least one model must be downloaded: `ollama pull llama3.2`
-3. Model appears in dropdown automatically after pull
-4. User manually clicks "Generate Prompt" to trigger generation
-
-## Static Export Considerations
-
-- This app is configured for static export (`next.config.ts`: `output: 'export'`)
-- No server-side rendering or API routes
-- All logic runs client-side
-- Firebase operations are client SDK calls only
-- **Ollama integration**: Requires Ollama running locally on the same machine
-  - The static export can be deployed anywhere (web server, CDN, etc.)
-  - But Ollama LLM features only work when accessing from `localhost` or with CORS configured
-  - Users must have Ollama installed and running locally
-- The `/out` directory contains the deployable static site
-- Must be served via HTTP server (not `file://` protocol) for assets to load correctly
+### Static Export Constraints
+- No API routes — all external calls are client-side fetches
+- Ollama features only work from `localhost` (CORS)
+- OpenRouter works from any deployment origin

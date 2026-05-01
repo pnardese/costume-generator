@@ -1,0 +1,542 @@
+t-shirt
+crew neck t-shirt
+v-neck t-shirt
+fitted t-shirt
+oversized t-shirt
+relaxed fit t-shirt
+slim fit t-shirt
+standard t-shirt
+long sleeve t-shirt
+short sleeve t-shirt
+short sleeve shirt
+long sleeve shirt
+button-up shirt
+collared shirt
+polo shirt
+polo neck
+pique shirt
+dress shirt
+oxford shirt
+chambray shirt
+linen shirt
+cotton shirt
+plain shirt
+basic shirt
+casual shirt
+henley shirt
+thermal shirt
+waffle knit shirt
+striped shirt
+plaid shirt
+flannel shirt
+denim shirt
+rugby shirt
+sweatshirt
+hoodie
+pullover hoodie
+zip-up hoodie
+crewneck sweatshirt
+raglan sleeve top
+crew neck sweater
+v-neck sweater
+cardigan
+open cardigan
+button-up cardigan
+zip-up cardigan
+sweater vest
+vest
+waistcoat
+sleeveless vest
+casual sweater
+pullover sweater
+long sleeve casual top
+formal shirt
+white dress shirt
+dress shirt with cufflinks
+tailored shirt
+crisp shirt
+pressed shirt
+button-front shirt
+formal wear top
+business casual top
+office shirt
+professional shirt
+corporate wear
+business attire
+tuxedo shirt
+formal white shirt
+french cuff shirt
+barrel cuff shirt
+spread collar shirt
+blazer
+tailored blazer
+sport coat
+suit jacket
+formal jacket
+business jacket
+dinner jacket
+tuxedo jacket
+leather jacket
+bomber jacket
+trucker jacket
+jean jacket
+harrington jacket
+windbreaker
+rain jacket
+waterproof jacket
+casual jacket
+structured jacket
+unstructured jacket
+single-breasted jacket
+double-breasted jacket
+three-piece suit jacket
+corduroy jacket
+wool jacket
+tweed jacket
+suede jacket
+aviator jacket
+flight jacket
+military jacket
+utility jacket
+sweater
+turtleneck sweater
+mock neck sweater
+cable knit sweater
+chunky knit sweater
+fitted sweater
+oversized sweater
+shrug
+bolero shrug
+turtle neck
+high neck sweater
+boatneck sweater
+scoop neck sweater
+thermal knit
+merino wool sweater
+acrylic sweater
+cotton sweater
+blend sweater
+athletic t-shirt
+performance t-shirt
+moisture-wicking shirt
+gym shirt
+workout shirt
+athletic tank top
+tank top
+sleeveless tank
+compression shirt
+compression top
+base layer
+athletic wear
+activewear
+sports shirt
+running shirt
+fitness wear
+training wear
+gym tank
+sleeveless athletic top
+mesh athletic shirt
+high-performance top
+swim trunks
+board shorts
+swim shorts
+swim shirt
+rash guard
+swim tank
+beach shirt
+beachwear top
+wetsuit top
+neoprene top
+half wetsuit
+sleeveless swim shirt
+swim tank top
+undershirt
+white undershirt
+ribbed undershirt
+muscle shirt
+wife beater
+sleeveless undershirt
+tank undershirt
+thermal undershirt
+base layer undershirt
+compression undershirt
+moisture-wicking undershirt
+victorian waistcoat
+victorian vest
+victorian formal wear
+renaissance tunic
+renaissance doublet
+medieval tunic
+medieval chainmail
+elizabethan doublet
+elizabethan tunic
+georgian formal coat
+georgian waistcoat
+georgian breeches and shirt
+18th century coat
+18th century waistcoat
+19th century formal wear
+1920s formal vest
+1920s suit jacket
+1920s waistcoat
+1920s dress shirt
+1930s zoot suit
+1940s soldier uniform
+1940s military shirt
+1950s casual shirt
+1950s bowling shirt
+1950s leather jacket
+1960s mod shirt
+1960s suit jacket
+1970s disco shirt
+1970s floral shirt
+1970s platform shirt
+1980s power suit
+1980s leather jacket
+1990s grunge flannel
+1990s band tee
+vintage shirt
+retro shirt
+steampunk vest
+steampunk coat
+steampunk goggles
+gothic coat
+gothic vest
+kimono
+yukata
+traditional japanese top
+hanbok
+traditional korean wear
+kung fu shirt
+traditional chinese tunic
+sari
+traditional indian wear
+traditional african dashiki
+dashiki shirt
+guayabera
+guayabera shirt
+traditional tunic
+cultural garment
+ethnic top
+indigenous wear
+traditional dress (upper)
+traditional formal wear
+armor breastplate
+full plate armor
+leather armor
+chainmail armor
+scale armor
+fantasy tunic
+elven tunic
+dwarven tunic
+fantasy warrior top
+fantasy mage robe
+fantasy cleric robe
+warrior armor
+knight armor
+paladin armor
+ranger armor
+rogue leather
+barbarian pelt
+fantasy cape
+superhero top
+superhero costume
+comic book costume
+comic book top
+video game cosplay
+anime cosplay top
+fantasy cosplay
+cosplay outfit
+character costume
+fantasy armor
+robe
+formal robe
+house robe
+silk robe
+smoking jacket
+dressing gown
+bathrobe
+ceremonial robe
+monk's robe
+priest's robe
+mage robe
+wizard robe
+sorcerer's robe
+flowing robe
+long robe
+short robe
+hooded robe
+collared robe
+draped robe
+luxurious robe
+band tee
+graphic t-shirt
+printed t-shirt
+vintage band shirt
+distressed shirt
+ripped shirt
+torn shirt
+alternative top
+goth top
+punk top
+studded jacket
+studded vest
+leather vest
+chain vest
+fishnet shirt
+mesh shirt
+grunge flannel
+grunge shirt
+dark academia top
+punk vest
+spike vest
+dark clothing
+music t-shirt
+sports t-shirt
+logo t-shirt
+text t-shirt
+slogan shirt
+vintage print
+retro print
+artistic print
+designer print
+branded shirt
+logo shirt
+minimalist print
+bold graphic
+small chest print
+large back print
+all-over print
+unbuttoned shirt
+loose unbuttoned shirt
+open shirt worn over tank
+partially buttoned shirt
+sleeves rolled up
+sleeves pushed up
+collar popped
+collar unbuttoned
+partially tucked shirt
+untucked shirt
+hanging unbuttoned shirt
+relaxed casual wear
+effortlessly casual
+sheer shirt
+see-through shirt
+transparent top
+semi-transparent shirt
+layered sheer
+mesh overlay
+chest harness
+leather harness
+body chain
+body jewelry
+suspenders
+braces
+collar
+detachable collar
+high collar
+turtleneck collar
+statement necklace integrated
+cross body chain
+beaded necklace integrated
+pendant necklace integrated
+cotton shirt
+silk shirt
+satin shirt
+velvet shirt
+suede shirt
+linen shirt
+polyester shirt
+spandex shirt
+lycra shirt
+wool shirt
+tweed shirt
+corduroy shirt
+chambray shirt
+oxford cloth shirt
+jersey fabric shirt
+knit shirt
+woven shirt
+stretchy shirt
+breathable shirt
+moisture-wicking shirt
+linen blend shirt
+cotton blend shirt
+wool blend shirt
+fitted shirt
+slim fit shirt
+regular fit shirt
+relaxed fit shirt
+loose fit shirt
+oversized shirt
+baggy shirt
+tailored shirt
+form-fitting shirt
+athletic fit shirt
+big and tall shirt
+skinny fit shirt
+tapered shirt
+straight fit shirt
+high-waisted shirt
+low-waisted shirt
+tucked in shirt
+plain shirt
+simple shirt
+embellished shirt
+embroidered shirt
+beaded shirt
+sequined shirt
+rhinestone shirt
+studded shirt
+fringe shirt
+tassel shirt
+ruffled shirt
+pleated shirt
+gathered shirt
+draped shirt
+wrapped shirt
+tied shirt
+patterned shirt
+striped shirt
+plaid shirt
+checkered shirt
+solid color shirt
+multi-color shirt
+ombre shirt
+gradient shirt
+tie-dye shirt
+batik shirt
+floral print shirt
+abstract print shirt
+geometric print shirt
+animal print shirt
+crew neck
+v-neck
+deep v-neck
+scoop neck
+henley neck
+mock neck
+turtleneck
+polo neck
+collared neck
+spread collar
+point collar
+button-down collar
+cuban collar
+camp collar
+bowling collar
+mandarin collar
+high neckline
+standard neckline
+plunging neckline
+no collar
+small collar
+vacation collar
+nehru collar
+funnel collar
+low collar
+contrast collar
+white collar
+colored collar
+patterned collar
+sleeveless
+short sleeve
+extra short sleeve
+three-quarter sleeve
+long sleeve
+extra long sleeve
+rolled sleeves
+pushed up sleeves
+cuffed sleeves
+french cuffs
+barrel cuffs
+button cuffs
+ruched sleeves
+gathered sleeves
+puffed sleeves
+tapered sleeves
+straight sleeves
+loose sleeves
+fitted sleeves
+raglan sleeves
+dolman sleeves
+batwing sleeves
+set-in sleeves
+buttoned shirt
+button-up shirt
+button-front
+snap buttons
+pearl buttons
+colored buttons
+contrasting buttons
+full button
+half button
+unbuttoned
+partially buttoned
+all buttons done
+top button open
+multiple buttons open
+zippered shirt
+zip-up shirt
+laced shirt
+lace-up
+tied shirt
+drawstring
+solid color
+single color
+plain
+striped pattern
+thin stripes
+thick stripes
+horizontal stripes
+vertical stripes
+diagonal stripes
+plaid pattern
+checkered pattern
+gingham pattern
+polka dot pattern
+animal print
+leopard print
+tiger stripe
+camouflage pattern
+camo
+paisley pattern
+floral pattern
+geometric pattern
+abstract pattern
+tribal pattern
+ethnic pattern
+gradient
+ombre effect
+color block
+contrast panel
+shirt over t-shirt
+t-shirt under open shirt
+t-shirt under jacket
+shirt over thermal
+hoodie under jacket
+sweater over collared shirt
+vest over dress shirt
+cardigan over t-shirt
+undershirt with button-up
+tank under open shirt
+mesh over solid shirt
+thermal base layer
+multiple layers
+strategic layering
+coordinated layers
+monochromatic layers
+contrast layers
+business casual
+business formal
+smart casual
+black tie attire
+white tie attire
+cocktail attire
+creative business
+business professional
+corporate formal
+executive wear
+dress code compliant
+formal dress code
+semi-formal wear

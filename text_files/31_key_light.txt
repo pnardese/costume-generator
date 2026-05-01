@@ -1,0 +1,13 @@
+None
+HMI (High-Powered Sunlight Simulation)
+LED Panel (Modern, soft, controllable source)
+Fresnel Spot (Hard, controllable beam, classic Hollywood look)
+Large Softbox (Very soft, flattering, diffused light)
+Octabank / Beauty Dish (Circular, often used for fashion and beauty)
+Ring Light (Flat, even light, iconic in photography and close-ups)
+Lantern Light / China Ball (Omni-directional, soft ambient top light)
+Practical Lamp (A visible lamp/bulb within the scene)
+Sunlight through a window
+Hard direct flood light
+Candlelight
+Fireplace glow

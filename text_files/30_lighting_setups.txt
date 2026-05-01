@@ -1,0 +1,17 @@
+Three-Point Lighting (Standard)
+High-Key Lighting (Bright, low contrast)
+Low-Key Lighting (Dark, high contrast, shadows)
+Rembrandt Lighting (Dramatic, triangle of light on cheek)
+Split Lighting (Half face lit, half in shadow)
+Butterfly / Paramount Lighting (Shadow directly under the nose)
+Backlight Only / Silhouette
+Rim Lighting / Edge Light
+Practical Lighting (Using visible lamps/bulbs in frame)
+Softbox / Large Diffused Light
+Hard Light / Direct Fresnel
+Day for Night (Simulated moonlight/darkness)
+Motivated Lighting (Source matches in-scene light)
+Chiaroscuro (Extreme light and shadow contrast)
+Gobo / Patterned Light
+Underlighting (Light source below the subject)
+Top Lighting (Light source directly above the subject)

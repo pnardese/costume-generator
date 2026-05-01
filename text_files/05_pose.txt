@@ -1,0 +1,279 @@
+standing
+upright
+neutral stance
+power stance
+relaxed stance
+casual stance
+confident posture
+slouching
+hunched
+straight-backed
+shoulder back
+chest out
+feet apart
+feet together
+hands on hips
+arms crossed
+one leg forward
+weight shifted
+leaning back
+leaning forward
+standing tall
+standing proud
+sitting
+seated
+cross-legged
+legs crossed
+kneeling
+squatting
+perched
+crouching
+sitting on edge
+lounging
+reclined
+slumped in chair
+sitting upright
+legs extended
+knees bent
+sitting on lap
+sitting back-to-back
+lying down
+prone
+supine
+lying on back
+lying on side
+lying on stomach
+recumbent
+sprawled
+stretched out
+curled up
+fetal position
+reclining
+on elbows
+arms at sides
+arms overhead
+arms outstretched
+arms raised
+arms lowered
+arms bent
+hands clasped
+hands behind back
+hands on chest
+hands together
+hands apart
+palms up
+palms down
+fingers spread
+clenched fists
+relaxed hands
+pointing
+reaching
+grabbing
+holding something
+embracing
+one leg bent
+feet flat
+feet pointed
+feet spread
+weight on one leg
+knees straight
+standing on tiptoes
+standing on one leg
+straddling
+facing forward
+facing away
+side profile
+three-quarter view
+twisted torso
+arched back
+straight spine
+curved spine
+leaning left
+leaning right
+tilted forward
+tilted back
+shoulders rotated
+chest facing viewer
+back to viewer
+jumping
+running
+walking
+lunging
+stretching
+throwing
+catching
+kicking
+punching
+dancing
+twirling
+spinning
+diving
+falling
+climbing
+crawling
+bending over
+straightening up
+turning around
+looking over shoulder
+resting
+napping
+sleeping
+daydreaming
+meditating
+contemplating
+thinking
+pondering
+dreaming
+relaxed
+at ease
+comfortable
+peaceful
+serene
+idle
+waiting
+tense
+strained
+straining
+exerting
+pushing
+pulling
+fighting
+defending
+attacking
+ready stance
+battle stance
+combat ready
+aggressive
+confrontational
+intimidating
+threatening
+defensive
+head up
+head down
+head tilted
+chin up
+chin down
+looking up
+looking down
+looking forward
+looking to side
+looking over shoulder
+looking back
+head in hands
+neck extended
+neck retracted
+nod position
+triumphant
+victorious
+defeated
+dejected
+confident
+nervous
+anxious
+excited
+surprised
+shocked
+scared
+frightened
+angry
+furious
+sad
+sorrowful
+happy
+cheerful
+playful
+flirtatious
+seductive
+submissive
+dominant
+obedient
+rebellious
+model pose
+catwalk pose
+fashion pose
+pin-up pose
+heroic pose
+action hero pose
+superhero landing
+dramatic pose
+theatrical pose
+exaggerated pose
+over-the-top pose
+minimalist pose
+elegant pose
+graceful pose
+awkward pose
+unnatural pose
+anatomically correct pose
+anatomically impossible pose
+contrapposto
+s-curve
+hourglass stance
+weight shift
+hip pop
+shoulder roll
+arms akimbo
+hands clasped behind head
+hands in pockets
+arms wrapped around self
+one hand on hip
+asymmetrical stance
+wide stance
+narrow stance
+classical pose
+repose
+close together
+far apart
+back-to-back
+face-to-face
+side-by-side
+one behind other
+overlapping
+stacked
+layered
+intertwined
+separated
+facing away from each other
+leaning on wall
+leaning on object
+holding object
+sitting on chair
+sitting on ground
+standing on platform
+gripping
+grasping
+supported by
+resting against
+propped up
+frontal
+dorsal
+lateral
+anterior
+posterior
+profile
+angled
+diagonal
+horizontal
+vertical
+inverted
+upside down
+turned away
+rotated
+twisted
+rigid
+flexible
+loose
+tight
+composed
+frantic
+slow
+swift
+deliberate
+careless
+practiced
+natural
+forced
+genuine
+subtle
+pronounced
+understated

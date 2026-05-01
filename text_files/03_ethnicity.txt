@@ -1,0 +1,20 @@
+White
+Black
+East Asian
+South Asian
+Southeast Asian
+Middle Eastern
+North African
+West African
+Central African
+Southern African
+Indigenous North American
+Indigenous South American
+Indigenous Australian
+Pacific Islander
+Hispanic / Latinx
+Eastern European
+Northern European
+Southern European
+Western European
+Mixed Race (specify combinations)

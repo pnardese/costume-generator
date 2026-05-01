@@ -1,0 +1,10 @@
+None
+Large Silk or Scrim (Provides very large, soft, ambient fill)
+Reflector Card (Silver, gold, or white bounce card)
+Foamboard Bounce (Simple, large-area white fill)
+Small LED Panel with heavy diffusion
+Negative Fill (Use a black flag/card to absorb light and deepen shadows)
+Ambient light only (No dedicated fill light used)
+Window light (Used as a secondary, soft source)
+Smoke/Haze (Atmospheric fill that scatters the key light)
+A lower-powered version of the key light

@@ -1,0 +1,15 @@
+Action/Adventure
+Science Fiction
+Fantasy/Mythology
+Film Noir
+Horror/Thriller
+Period Drama (Historical)
+Contemporary Drama (Character Study)
+Neo-Western
+Dystopian
+Cyberpunk
+Steampunk
+Socio-Realism
+Romantic Comedy
+Epic
+Musical
